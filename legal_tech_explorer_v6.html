@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en" class="fontawesome-i2svg-active fontawesome-i2svg-complete">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Legal Tech Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script> window.FontAwesomeConfig = { autoReplaceSvg: 'nest'};</script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    html, body { height: 100%; }
+    body { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+    ::-webkit-scrollbar { display: none; }
+    /* Column collapse modes (mirrors your original) */
+    body.mode-left  #mainCol, body.mode-left  #rightCol { display:none; }
+    body.mode-mid   #leftCol, body.mode-mid   #rightCol { display:none; }
+    body.mode-right #leftCol, body.mode-right #mainCol  { display:none; }
+  </style>
+</head>
+<body class="bg-slate-50 font-inter">
+  <!-- Header -->
+  <header id="header" class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <div class="px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <i class="text-white text-lg" data-fa-i2svg><svg class="svg-inline--fa fa-scale-balanced" aria-hidden="true" viewBox="0 0 640 512"><path fill="currentColor" d="M384 32H512c17.7 0 32 14.3 32 32s-14.3 32-32 32H398.4c-5.2 25.8-22.9 47.1-46.4 57.3V448H512c17.7 0 32 14.3 32 32s-14.3 32-32 32H320 128c-17.7 0-32-14.3-32-32s14.3-32 32-32H288V153.3c-23.5-10.3-41.2-31.6-46.4-57.3H128c-17.7 0-32-14.3-32-32s14.3-32 32-32H256c14.6-19.4 37.8-32 64-32s49.4 12.6 64 32zm55.6 288H584.4L512 195.8 439.6 320zM512 416c-62.9 0-115.2-34-126-78.9c-2.6-11 1-22.3 6.7-32.1l95.2-163.2c5-8.6 14.2-13.8 24.1-13.8s19.1 5.3 24.1 13.8l95.2 163.2c5.7 9.8 9.3 21.1 6.7 32.1C627.2 382 574.9 416 512 416zM126.8 195.8L54.4 320H199.3L126.8 195.8zM.9 337.1c-2.6-11 1-22.3 6.7-32.1l95.2-163.2c5-8.6 14.2-13.8 24.1-13.8s19.1 5.3 24.1 13.8l95.2 163.2c5.7 9.8 9.3 21.1 6.7 32.1C242 382 189.7 416 126.8 416S11.7 382 .9 337.1z"/></svg></i>
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-gray-900">Legal Tech Explorer</h1>
+              <p class="text-sm text-gray-500">Database of Legal Technology Tools</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button id="loadBtn" class="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <i class="mr-2" data-fa-i2svg><svg class="svg-inline--fa fa-upload" aria-hidden="true" viewBox="0 0 512 512"><path fill="currentColor" d="M288 109.3V352c0 17.7-14.3 32-32 32s-32-14.3-32-32V109.3l-73.4 73.4c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l128-128c12.5-12.5 32.8-12.5 45.3 0l128 128c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L288 109.3zM64 352H192c0 35.3 28.7 64 64 64s64-28.7 64-64H448c35.3 0 64 28.7 64 64v32c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V416c0-35.3 28.7-64 64-64zM432 456a24 24 0 1 0 0-48 24 24 0 1 0 0 48z"/></svg></i>
+            Load CSV
+          </button>
+          <input id="fileInput" type="file" accept=".csv" class="hidden" />
+          <button id="pasteBtn" class="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+            <i class="mr-2" data-fa-i2svg><svg class="svg-inline--fa fa-paste" aria-hidden="true" viewBox="0 0 512 512"><path fill="currentColor" d="M160 0c-23.7 0-44.4 12.9-55.4 32H48C21.5 32 0 53.5 0 80V400c0 26.5 21.5 48 48 48H192V176c0-44.2 35.8-80 80-80h48V80c0-26.5-21.5-48-48-48H215.4C204.4 12.9 183.7 0 160 0zM272 128c-26.5 0-48 21.5-48 48V448v16c0 26.5 21.5 48 48 48H464c26.5 0 48-21.5 48-48V243.9c0-12.7-5.1-24.9-14.1-33.9l-67.9-67.9c-9-9-21.2-14.1-33.9-14.1H320 272zM160 40a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg></i>
+            Paste CSV
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Layout -->
+  <div class="flex h-screen pt-20">
+    <!-- Left Sidebar - Filters -->
+    <aside id="leftCol" class="w-80 bg-white border-r border-gray-200 flex flex-col" aria-label="Filters">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900">Filters</h2>
+          <button id="toggleLeft" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100" title="Expand filters">
+            <i data-fa-i2svg><svg class="svg-inline--fa fa-expand" aria-hidden="true" viewBox="0 0 448 512"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s-14.3 32-32 32h96c17.7 0 32-14.3 32-32V352z"/></svg></i>
+          </button>
+        </div>
+        <div class="relative">
+          <input id="filterSearch" type="search" placeholder="Search filters..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+          <i class="absolute left-3 top-2.5 text-gray-400" data-fa-i2svg><svg class="svg-inline--fa fa-magnifying-glass" aria-hidden="true" viewBox="0 0 512 512"><path fill="currentColor" d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg></i>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6">
+        <div id="filter-groups" class="space-y-4">
+          <!-- JS injects schema-driven filters here -->
+        </div>
+      </div>
+
+      <div class="p-6 border-t border-gray-200">
+        <button id="clearFilters" class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">Clear All Filters</button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="mainCol" class="flex-1 flex flex-col">
+      <!-- Search and Controls -->
+      <div id="search-controls" class="bg-white border-b border-gray-200 p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center space-x-4 w-full">
+            <div class="relative flex-1 min-w-96">
+              <input id="q" type="search" placeholder="Search legal tech tools..." class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
+              <i class="absolute left-3 top-3.5 text-gray-400" data-fa-i2svg><svg class="svg-inline--fa fa-magnifying-glass" aria-hidden="true" viewBox="0 0 512 512"><path fill="currentColor" d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg></i>
+            </div>
+            <div class="flex items-center space-x-3">
+              <span id="count" class="text-sm text-gray-500">0 tools found</span>
+              <div class="flex border border-gray-300 rounded-lg">
+                <button class="px-3 py-2 bg-blue-600 text-white rounded-l-lg" title="Grid view">
+                  <i data-fa-i2svg><svg class="svg-inline--fa fa-table-cells-large" aria-hidden="true" viewBox="0 0 512 512"><path fill="currentColor" d="M448 96V224H288V96H448zm0 192V416H288V288H448zM224 224H64V96H224V224zM64 288H224V416H64V288zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z"/></svg></i>
+                </button>
+                <button class="px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-r-lg" title="List view">
+                  <i data-fa-i2svg><svg class="svg-inline--fa fa-list" aria-hidden="true" viewBox="0 0 512 512"><path fill="currentColor" d="M40 48C26.7 48 16 58.7 16 72v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V72c0-13.3-10.7-24-24-24H40zM192 64c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zm0 160c-17.7 0-32 14.3-32 32s14.3 32 32 32H480c17.7 0 32-14.3 32-32s-14.3-32-32-32H192zM16 232v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V232c0-13.3-10.7-24-24-24H40c-13.3 0-24 10.7-24 24zM40 368c-13.3 0-24 10.7-24 24v48c0 13.3 10.7 24 24 24H88c13.3 0 24-10.7 24-24V392c0-13.3-10.7-24-24-24H40z"/></svg></i>
+                </button>
+              </div>
+              <button id="toggleMid" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100" title="Expand results">
+                <i data-fa-i2svg><svg class="svg-inline--fa fa-expand" aria-hidden="true" viewBox="0 0 448 512"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s-14.3 32-32 32h96c17.7 0 32-14.3 32-32V352z"/></svg></i>
+              </button>
+            </div>
+          </div>
+          <!-- Active filter chips (populated dynamically) -->
+          <div id="activeChips" class="flex items-center space-x-2 mt-2"></div>
+        </div>
+      </div>
+
+      <!-- Results Grid -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <div id="tools" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"></div>
+      </div>
+    </main>
+
+    <!-- Right Sidebar - Details and Comparison -->
+    <aside id="rightCol" class="w-96 bg-white border-l border-gray-200 flex flex-col" aria-label="Details and comparison">
+      <!-- Tool Details -->
+      <div class="border-b border-gray-200">
+        <div class="p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Tool Details</h2>
+            <button id="toggleRight" class="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100" title="Expand details">
+              <i data-fa-i2svg><svg class="svg-inline--fa fa-expand" aria-hidden="true" viewBox="0 0 448 512"><path fill="currentColor" d="M32 32C14.3 32 0 46.3 0 64v96c0 17.7 14.3 32 32 32s32-14.3 32-32V96h64c17.7 0 32-14.3 32-32s-14.3-32-32-32H32zM64 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v96c0 17.7 14.3 32 32 32h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H64V352zM320 32c-17.7 0-32 14.3-32 32s14.3 32 32 32h64v64c0 17.7 14.3 32 32 32s32-14.3 32-32V64c0-17.7-14.3-32-32-32H320zM448 352c0-17.7-14.3-32-32-32s-32 14.3-32 32v64H320c-17.7 0-32 14.3-32 32s-14.3 32-32 32h96c17.7 0 32-14.3 32-32V352z"/></svg></i>
+            </button>
+          </div>
+          <div id="details" class="space-y-4 text-sm text-gray-700">
+            <div class="text-center py-8 text-gray-500">
+              <i class="text-3xl mb-3" data-fa-i2svg><svg class="svg-inline--fa fa-arrow-pointer" aria-hidden="true" viewBox="0 0 320 512"><path fill="currentColor" d="M0 55.2V426c0 12.2 9.9 22 22 22c6.3 0 12.4-2.7 16.6-7.5L121.2 346l58.1 116.3c7.9 15.8 27.1 22.2 42.9 14.3s22.2-27.1 14.3-42.9L179.8 320H297.9c12.2 0 22.1-9.9 22.1-22.1c0-6.3-2.7-12.3-7.4-16.5L38.6 37.9C34.3 34.1 28.9 32 23.2 32C10.4 32 0 42.4 0 55.2z"/></svg></i>
+              <p>Select a tool to view detailed information</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comparison Section -->
+      <div class="flex-1 flex flex-col">
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900">Compare Tools</h3>
+            <span class="text-xs text-gray-500">Up to 5 tools</span>
+          </div>
+          <div id="compareList" class="space-y-2 mb-4"></div>
+          <div class="overflow-y-auto max-h-80">
+            <table id="compareTable" class="w-full text-sm"></table>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // ======= SCHEMA (unchanged from your original) =======
+    const SCHEMA = [
+      { key: 'Vendor Name', group: 'Vendor Identification', type: 'text' },
+      { key: 'Vendor Overview', group: 'Vendor Identification', type: 'text' },
+      { key: 'HQ', group: 'Vendor Identification', type: 'single' },
+      { key: 'Office Locations', group: 'Vendor Identification', type: 'text' },
+      { key: 'Regions Served', group: 'Vendor Identification', type: 'multi', values: ['Australia','New Zealand','Asia-Pacific (APAC)','North America (US & Canada)','Europe (UK & EU)','United Kingdom','Middle East','Africa','Latin America','Unknown'] },
+      { key: 'Year Founded', group: 'Vendor Identification', type: 'number-range' },
+
+      { key: 'Product Name', group: 'Product Identification', type: 'text' },
+      { key: 'Product Description', group: 'Product Identification', type: 'text' },
+      { key: 'Languages supported', group: 'Product Identification', type: 'single', values: ['English only','English + Limited Other Languages','Multilingual (supports major global languages)','Unknown / To Verify'] },
+
+      { key: 'Legal Functionality – Main Category', group: 'Legal Functionality & Use Case', type: 'single', values: ['Contracting & Document Automation','Matter, Workflow & Intake Management','Legal Operations & Analytics','Outside Counsel & Spend Management','Compliance, Risk & Governance','Corporate Governance & Entity Management','Litigation, Disputes & Investigations','Intellectual Property, Technology & Data','Employment & HR Legal Support','Cross-Border, Transactions & Deal Management','Knowledge, Search & Precedent Management','AI Legal Assistants & Productivity Tools','Business Partnering & Self-Service Tools','Integration & Platform Infrastructure','Legal Research & Insights.'] },
+      { key: 'Legal Functionality – Sub-Category', group: 'Legal Functionality & Use Case', type: 'single' },
+      { key: 'Main Problem Solved', group: 'Legal Functionality & Use Case', type: 'text' },
+
+      { key: 'Primary User Segment', group: 'Audience, Fit & Accessibility', type: 'multi', values: ['Corporate legal','Private practice','Alternative Legal Service Providers (ALSPs)','Legal Operations Professionals','Contract Management Teams / Procurement','Compliance & Risk Teams','Litigation / Disputes Teams','Intellectual Property Teams.'] },
+      { key: 'Industry Focus', group: 'Audience, Fit & Accessibility', type: 'single', values: ['Corporate','Government / Public Sector','Financial Services','Healthcare / Life Sciences','Education / Research','Energy / Resources','Professional Services','Other / Not Specified'] },
+
+      { key: 'AI Maturity Stage', group: 'AI Capabilities & Innovation', type: 'single', values: ['Experimental / early stage','Quick win','Advanced','Enterprise-grade'] },
+      { key: 'AI Powered', group: 'AI Capabilities & Innovation', type: 'single', values: ['Yes','No'] },
+      { key: 'AI Platform', group: 'AI Capabilities & Innovation', type: 'multi', values: ['Large Language Model (LLM) Platforms','Predictive / Machine Learning (ML) Platforms','Natural Language Processing (NLP) / Text Analytics','Computer Vision & Document Recognition','Recommendation & Decision Support Systems','Conversational / Copilot Layer','AI Integration / Orchestration Layer','Domain-Specific or Proprietary AI Engines.'] },
+      { key: 'Deployment Model', group: 'AI Capabilities & Innovation', type: 'single', values: ['Cloud (SaaS)','Private Cloud','On-Premises','Hybrid','Desktop / Local Application.'] },
+      { key: 'Hosting Location / Data Residence', group: 'AI Capabilities & Innovation', type: 'single', values: ['Australia','Asia-Pacific (ex-AU)','United States','Europe / UK','Multi-Region / Distributed Cloud','Customer-Hosted / Private Cloud','Unknown / To Verify'] },
+      { key: 'Hosting Provider', group: 'AI Capabilities & Innovation', type: 'single', values: ['AWS','Azure','Google Cloud','Other'] },
+
+      { key: 'ISO Certifications', group: 'Security, Privacy & Trust', type: 'multi', values: ['ISO 27001','ISO 27017','ISO 27018','ISO 27701','ISO 22301','ISO 9001','ISO 20000'] },
+      { key: 'Security & Compliance Certifications', group: 'Security, Privacy & Trust', type: 'multi', values: ['SOC 1 (Type I or II)','SOC 2 (Type I or II)','SOC 3','GDPR Compliance (EU)','CCPA Compliance (US)','HIPAA Compliance (US)','FedRAMP, Authorization (US)','IRAP Assessment (AU)','CSA STAR Certification','Cyber Essentials / Plus (UK).'] },
+
+      { key: 'Pricing Model', group: 'Commercials & Procurement', type: 'single', values: ['Subscription (SaaS)','Usage-Based / Consumption','Per Seat / License','Tiered / Plan-Based','Enterprise Custom Quote','Freemium / Free Trial','One-Time Purchase / Perpetual License.'] },
+      { key: 'Approx. Price Range (AUD)', group: 'Commercials & Procurement', type: 'single', values: ['<$10K','$10K–$50K','$51K-$100K','$101K+'] },
+      { key: 'Demo / Proof of Concept Available', group: 'Commercials & Procurement', type: 'single', values: ['Yes','No','Unknown'] },
+      { key: 'Adoption Level', group: 'Commercials & Procurement', type: 'single', values: ['Emerging / New Entrant','Growing Adoption','Mainstream / Proven','Market Leader / Standard','Unknown / To Verify'] },
+      { key: 'Ease of Purchase', group: 'Commercials & Procurement', type: 'single', values: ['Very Easy','Easy','Moderate','Complex'] },
+
+      { key: 'Customer Reviews', group: 'Customer Reviews', type: 'text' },
+      { key: 'Customer Feedback Rating', group: 'Customer Reviews', type: 'number-range' },
+
+      { key: 'Vendor Contact Details', group: 'Vendor Identification', type: 'text' },
+      { key: 'Vendor Website', group: 'Vendor Identification', type: 'text' }
+    ];
+
+    // Seed row (kept) — replaced when CSV loads
+    let DATA = [{
+      "__id":"actionstep-actionstep-https-www-actionstep-com-0",
+      "__display_name":"Actionstep — Actionstep",
+      "Vendor Name":"Actionstep",
+      "Vendor Overview":"Actionstep is a modern, adaptable law firm management platform designed to streamline legal operations and improve client service.",
+      "HQ":"New Zealand",
+      "Regions Served":"Asia-Pacific (APAC); North America (US & Canada); Europe (UK & EU); Latin America",
+      "Year Founded":"2004",
+      "Product Name":"Actionstep",
+      "Product Description":"Comprehensive practice management with workflows, matter management, document automation, and billing.",
+      "Languages supported":"English only",
+      "Legal Functionality – Main Category":"Matter, Workflow & Intake Management",
+      "Legal Functionality – Sub-Category":"Workflow Automation",
+      "Primary User Segment":"Corporate legal; Legal Operations Professionals",
+      "AI Maturity Stage":"Enterprise-grade",
+      "AI Powered":"Yes",
+      "AI Platform":"Large Language Model (LLM) Platforms; AI Integration / Orchestration Layer",
+      "Deployment Model":"Cloud (SaaS)",
+      "Hosting Location / Data Residence":"Multi-Region / Distributed Cloud",
+      "Hosting Provider":"AWS",
+      "ISO Certifications":"ISO 27001",
+      "Security & Compliance Certifications":"SOC 2 (Type I or II); GDPR Compliance (EU)",
+      "Pricing Model":"Subscription (SaaS)",
+      "Approx. Price Range (AUD)":"$10K–$50K",
+      "Demo / Proof of Concept Available":"Yes",
+      "Adoption Level":"Mainstream / Proven",
+      "Ease of Purchase":"Moderate",
+      "Customer Reviews":"Well regarded by midsize firms",
+      "Customer Feedback Rating":"4.3",
+      "Vendor Contact Details":"https://www.actionstep.com/contact/",
+      "Vendor Website":"https://www.actionstep.com/"
+    }];
+
+    // ===== Helpers (ported, lightly adapted for Tailwind) =====
+    const toolsEl   = document.getElementById('tools');
+    const detailsEl = document.getElementById('details');
+    const countEl   = document.getElementById('count');
+    const chipsEl   = document.getElementById('activeChips');
+    const filtersWrap = document.getElementById('filter-groups');
+
+    function esc(s){ return (s||'').toString().replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m])); }
+    function splitMulti(v){ if(!v) return []; return String(v).split(/[;,|\/\n]+/).map(x=>x.trim()).filter(Boolean); }
+    function vendorSlug(name){ return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+    function vendorNoSpace(name){ return String(name||'').replace(/\s+/g,''); }
+    function logoCandidates(name){ const a=[]; const raw=vendorNoSpace(name); const slug=vendorSlug(name); ['png','jpg','jpeg','webp','svg'].forEach(ext=>{ a.push('logos/'+raw+'.'+ext); a.push('logos/'+slug+'.'+ext); }); return a; }
+    function initialsBadge(name, big){ const d=document.createElement('div'); d.className = (big? 'w-16 h-16 text-lg':'w-10 h-10 text-sm') + ' rounded-lg bg-blue-50 text-blue-700 border border-blue-100 flex items-center justify-center font-bold'; const t=(name||'').trim(); const parts=t.split(/\s+/); let ini=''; if(parts.length>1){ ini=parts[0][0]+parts[parts.length-1][0]; } else { ini=t.slice(0,2); } d.textContent=ini.toUpperCase(); return d; }
+    function makeLogoEl(name, big){ const img=document.createElement('img'); img.className=(big? 'w-16 h-16':'w-10 h-10')+' object-contain rounded-lg bg-white/40 border border-gray-200 p-1 flex-shrink-0'; const tries=logoCandidates(name); if(!tries.length){ return initialsBadge(name,big);} img.dataset.tries=JSON.stringify(tries); img.dataset.try='0'; img.alt=name+' logo'; img.src=tries[0]; img.onerror=function(){ const idx=+img.dataset.try+1; const arr=JSON.parse(img.dataset.tries); if(idx < arr.length){ img.dataset.try=String(idx); img.src=arr[idx]; } else { img.replaceWith(initialsBadge(name,big)); } }; return img; }
+
+    // Controls registry
+    let CONTROLS = new Map();
+
+    function buildFilters(){
+      CONTROLS = new Map();
+      filtersWrap.innerHTML = '';
+
+      // Quick dedupe option
+      const optionsCard = document.createElement('div');
+      optionsCard.className = 'bg-gray-50 rounded-lg p-4 border border-gray-200';
+      optionsCard.innerHTML = `
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-medium text-gray-900">Options</h3>
+        </div>
+        <label class="inline-flex items-center text-sm text-gray-700">
+          <input id="dedupeVendor" type="checkbox" class="mr-2" checked>
+          Deduplicate identical rows
+        </label>`;
+
+      // Build groups
+      const groups=[]; SCHEMA.forEach(s => { if(!groups.includes(s.group)) groups.push(s.group); });
+      groups.forEach(grp => {
+        const card=document.createElement('div');
+        card.className='bg-gray-50 rounded-lg p-4 border border-gray-200';
+        card.innerHTML = `<div class="flex items-center justify-between mb-3">
+            <h3 class="font-medium text-gray-900">${esc(grp)}</h3>
+          </div>`;
+        const inner=document.createElement('div'); inner.className='space-y-3';
+        card.appendChild(inner);
+
+        SCHEMA.filter(s=>s.group===grp).forEach(field => {
+          const opts = uniqueValues(field.key, field);
+          if(field.type==='text') addTextControl(inner, field.key);
+          else if(field.type==='single') addSingleSelect(inner, field.key, opts);
+          else if(field.type==='multi') addMultiChips(inner, field.key, opts);
+          else if(field.type==='number-range') addNumberRange(inner, field.key);
+        });
+        filtersWrap.appendChild(card);
+      });
+
+      filtersWrap.appendChild(optionsCard);
+    }
+
+    function uniqueValues(key, cfg){
+      if(cfg && cfg.values) return cfg.values;
+      const vals=new Set();
+      DATA.forEach(r => {
+        const arr = splitMulti(r[key]);
+        if(arr.length) arr.forEach(v => vals.add(v));
+        else if(r[key]) vals.add(String(r[key]));
+      });
+      return Array.from(vals).sort();
+    }
+
+    function addTextControl(parent, key){
+      const wrap=document.createElement('div'); wrap.className='';
+      wrap.innerHTML = `<label class="block text-sm font-medium text-gray-700 mb-2">${esc(key)}</label>
+                        <input data-key="${esc(key)}" type="search" placeholder="Search…" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">`;
+      parent.appendChild(wrap);
+      const el = wrap.querySelector('input');
+      CONTROLS.set(key, { type:'text', get: () => el.value.trim() });
+    }
+
+    function addSingleSelect(parent, key, options){
+      const wrap=document.createElement('div');
+      const opts = ['<option value="">Any</option>'].concat(options.map(v=>`<option>${esc(v)}</option>`)).join('');
+      wrap.innerHTML = `<label class="block text-sm font-medium text-gray-700 mb-2">${esc(key)}</label>
+                        <select data-key="${esc(key)}" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">${opts}</select>`;
+      parent.appendChild(wrap);
+      const sel = wrap.querySelector('select');
+      CONTROLS.set(key, { type:'single', get: () => sel.value });
+    }
+
+    function addMultiChips(parent, key, options){
+      const wrap=document.createElement('div');
+      wrap.innerHTML = `<label class="block text-sm font-medium text-gray-700 mb-2">${esc(key)}</label>
+                        <div class="flex flex-wrap gap-2"></div>`;
+      parent.appendChild(wrap);
+      const row = wrap.querySelector('div');
+      options.forEach(v => {
+        const lab=document.createElement('label'); lab.className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800';
+        lab.innerHTML = `<input type="checkbox" class="mr-2"> ${esc(v)}`;
+        lab.querySelector('input').value = v;
+        row.appendChild(lab);
+      });
+      CONTROLS.set(key, { type:'multi', get: () => Array.from(row.querySelectorAll('input:checked')).map(c=>c.value) });
+    }
+
+    function addNumberRange(parent, key){
+      const wrap=document.createElement('div');
+      wrap.innerHTML = `<label class="block text-sm font-medium text-gray-700 mb-2">${esc(key)}</label>
+                        <div class="flex space-x-2"><input type="number" placeholder="From" class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm min">
+                        <input type="number" placeholder="To" class="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm max"></div>`;
+      parent.appendChild(wrap);
+      const minEl = wrap.querySelector('.min'); const maxEl = wrap.querySelector('.max');
+      CONTROLS.set(key, { type:'number-range', get: () => ({min:minEl.value, max:maxEl.value}) });
+    }
+
+    // ===== Filtering & rendering =====
+    function quickBlob(rec){
+      return (rec.__display_name+' '+(rec['Vendor Name']||'')+' '+(rec['Product Name']||'')+' '+(rec['Product Description']||'')+' '+(rec['Vendor Overview']||''));
+    }
+    function numberInRange(rec, key, range){
+      if(!range || (!range.min && !range.max)) return true;
+      const n=parseFloat(rec[key]); if(isNaN(n)) return false;
+      if(range.min && n < parseFloat(range.min)) return false;
+      if(range.max && n > parseFloat(range.max)) return false;
+      return true;
+    }
+    function multiMatch(recVal, selected){
+      if(!selected || !selected.length) return true;
+      const hay=splitMulti(recVal); const set=new Set(hay);
+      return selected.some(s => set.has(s));
+    }
+    function matchRecord(rec){
+      const t = (document.getElementById('q').value || '').trim().toLowerCase();
+      if(t && !quickBlob(rec).toLowerCase().includes(t)) return false;
+      for(const cfg of SCHEMA){
+        const ctl=CONTROLS.get(cfg.key); if(!ctl) continue; const val=ctl.get();
+        if(!val || (Array.isArray(val) && !val.length)) continue;
+        if(cfg.type==='text'){ if(String(rec[cfg.key]||'').toLowerCase().indexOf(String(val).toLowerCase())===-1) return false; }
+        else if(cfg.type==='single'){ if(String(rec[cfg.key]||'')!==String(val)) return false; }
+        else if(cfg.type==='multi'){ if(!multiMatch(rec[cfg.key], val)) return false; }
+        else if(cfg.type==='number-range'){ if(!numberInRange(rec, cfg.key, val)) return false; }
+      }
+      return true;
+    }
+    function keyByVendorTool(rows){
+      const seen=new Set(), out=[]; rows.forEach(r=>{ const k=(r['Vendor Name']||'')+'|'+(r['Product Name']||'')+'|'+(r['Vendor Website']||''); if(!seen.has(k)){ seen.add(k); out.push(r);} }); return out;
+    }
+
+    let compare = [];
+    function toggleCompare(id){ const i=compare.indexOf(id); if(i===-1){ if(compare.length>=5) return; compare.push(id);} else compare.splice(i,1); renderCompare(); }
+
+    function renderList(rows){
+      countEl.textContent = rows.length + ' tools';
+      toolsEl.innerHTML = '';
+      rows.slice(0,200).forEach(rec => {
+        const url = rec['Vendor Website'] || '';
+        const chosen = compare.indexOf(rec.__id)!==-1;
+        const cats = splitMulti(rec['Legal Functionality – Main Category']).concat(splitMulti(rec['Legal Functionality – Sub-Category']));
+        const chips = cats.map(c=>`<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">${esc(c)}</span>`).join(' ');
+
+        const card=document.createElement('div'); card.className='bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer flex flex-col'; card.dataset.id=rec.__id;
+        const head=document.createElement('div'); head.className='flex items-start space-x-4 mb-4';
+        head.appendChild(makeLogoEl(rec['Vendor Name']||rec['Vendor']||''));
+        const titleWrap=document.createElement('div'); titleWrap.className='flex-1 min-w-0';
+        titleWrap.innerHTML = `<h3 class="text-lg font-semibold text-gray-900 mb-1">${esc(rec.__display_name||rec['Product Name']||rec['Vendor Name']||'Unnamed')}</h3>
+          <p class="text-sm text-gray-500 mb-2">${esc(rec['Legal Functionality – Main Category']||'')}</p>
+          <div class="flex items-center space-x-4 text-xs text-gray-500">
+            <span class="flex items-center"><i class="mr-1" data-fa-i2svg><svg class="svg-inline--fa fa-location-dot" aria-hidden="true" viewBox="0 0 384 512"><path fill="currentColor" d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/></svg></i>${esc(rec['HQ']||'')}</span>
+            <span class="flex items-center"><i class="mr-1" data-fa-i2svg><svg class="svg-inline--fa fa-calendar" aria-hidden="true" viewBox="0 0 448 512"><path fill="currentColor" d="M96 32V64H48C21.5 64 0 85.5 0 112v48H448V112c0-26.5-21.5-48-48-48H352V32c0-17.7-14.3-32-32-32s-32 14.3-32 32V64H160V32c0-17.7-14.3-32-32-32S96 14.3 96 32zM448 192H0V464c0 26.5 21.5 48 48 48H400c26.5 0 48-21.5 48-48V192z"/></svg></i>Founded ${esc(rec['Year Founded']||'')}</span>
+          </div>`;
+        head.appendChild(titleWrap);
+        card.appendChild(head);
+
+        const desc=document.createElement('p'); desc.className='text-sm text-gray-600 mb-4'; desc.textContent = rec['Product Description']||''; card.appendChild(desc);
+        const chipRow=document.createElement('div'); chipRow.className='flex items-center space-x-2 mb-4 flex-wrap'; chipRow.innerHTML = chips; card.appendChild(chipRow);
+
+        const actions=document.createElement('div'); actions.className='flex items-center justify-between';
+        const tagWrap=document.createElement('div'); tagWrap.className='flex space-x-2';
+        // Example tags (deployment/segment if present)
+        const dep = rec['Deployment Model']; if(dep) tagWrap.innerHTML += `<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800">${esc(dep)}</span>`;
+        const seg = rec['Primary User Segment']; if(seg) tagWrap.innerHTML += `<span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">${esc(seg.split(';')[0]||seg)}</span>`;
+        const btns=document.createElement('div'); btns.className='flex items-center space-x-2';
+        const detailsBtn=document.createElement('button'); detailsBtn.className='text-gray-400 hover:text-blue-600'; detailsBtn.innerHTML = '<i data-fa-i2svg><svg class="svg-inline--fa fa-plus" aria-hidden="true" viewBox="0 0 448 512"><path fill="currentColor" d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/></svg></i>';
+        const linkBtn=document.createElement('a'); linkBtn.className='text-gray-400 hover:text-blue-600'; linkBtn.target='_blank'; linkBtn.rel='noopener'; linkBtn.href = url || '#'; linkBtn.innerHTML = '<i data-fa-i2svg><svg class="svg-inline--fa fa-up-right-from-square" aria-hidden="true" viewBox="0 0 512 512"><path fill="currentColor" d="M352 0c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9L370.7 96 201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L416 141.3l41.4 41.4c9.2 9.2 22.9 11.9 34.9 6.9s19.8-16.6 19.8-29.6V32c0-17.7-14.3-32-32-32H352zM80 32C35.8 32 0 67.8 0 112V432c0 44.2 35.8 80 80 80H400c44.2 0 80-35.8 80-80V320c0-17.7-14.3-32-32-32s-32 14.3-32 32V432c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V112c0-8.8 7.2-16 16-16H192c17.7 0 32-14.3 32-32s-14.3-32-32-32H80z"/></svg></i>';
+        const cmpBtn=document.createElement('button'); cmpBtn.className='text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50'; cmpBtn.textContent = chosen? 'Remove from compare':'Add to compare';
+        btns.appendChild(detailsBtn); if(url) btns.appendChild(linkBtn); btns.appendChild(cmpBtn);
+        actions.appendChild(tagWrap); actions.appendChild(btns);
+        card.appendChild(actions);
+        toolsEl.appendChild(card);
+
+        detailsBtn.addEventListener('click', ()=>{ renderDetails(rec); });
+        cmpBtn.addEventListener('click', ()=>{ toggleCompare(rec.__id); applyFilters(); });
+      });
+    }
+
+    function renderDetails(rec){
+      if(!rec){ detailsEl.innerHTML='<p class="text-gray-500">No record</p>'; return; }
+      const top=document.createElement('div'); top.className='flex items-center gap-3 mb-3';
+      top.appendChild(makeLogoEl(rec['Vendor Name']||'', true));
+      const name=document.createElement('div'); name.innerHTML = `<div class="text-lg font-semibold text-gray-900">${esc(rec.__display_name||'')}</div>`; top.appendChild(name);
+
+      let rows='';
+      Object.keys(rec).forEach(k=>{
+        if(/^_/.test(k) || /^__/.test(k)) return; const v=rec[k]; if(v==null || v==='') return;
+        let val = esc(v);
+        if(/^https?:\/\//i.test(String(v))) val = `<a class="text-blue-600 hover:underline" href="${v}" target="_blank" rel="noopener">${esc(v)}</a>`;
+        rows += `<tr class="border-b last:border-0"><th class="text-left align-top pr-3 py-1 text-gray-500 w-40">${esc(k)}</th><td class="py-1">${val}</td></tr>`;
+      });
+      detailsEl.innerHTML = '';
+      detailsEl.appendChild(top);
+      const tbl=document.createElement('table'); tbl.className='w-full text-sm'; tbl.innerHTML = rows; detailsEl.appendChild(tbl);
+    }
+
+    function renderCompare(){
+      const list=document.getElementById('compareList'); const tbl=document.getElementById('compareTable');
+      list.innerHTML=''; if(!compare.length){ tbl.innerHTML='<tr><td class="text-gray-500 p-2">Nothing selected</td></tr>'; return; }
+      compare.forEach(id=>{
+        const rec=DATA.find(r=>r.__id===id);
+        const pill=document.createElement('div'); pill.className='flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200';
+        const left=document.createElement('div'); left.className='flex items-center space-x-3';
+        const icon=makeLogoEl(rec['Vendor Name']||'');
+        const label=document.createElement('div'); label.className='text-sm font-medium text-gray-800'; label.textContent = rec.__display_name||'';
+        left.appendChild(icon); left.appendChild(label);
+        const x=document.createElement('button'); x.className='text-gray-400 hover:text-red-600'; x.textContent='Remove'; x.addEventListener('click', ()=>{ const i=compare.indexOf(id); if(i!==-1){ compare.splice(i,1); renderCompare(); }});
+        pill.appendChild(left); pill.appendChild(x);
+        list.appendChild(pill);
+      });
+
+      const cols = SCHEMA.map(s=>s.key).slice(0,24);
+      const header = `<tr class="bg-gray-100">\n        <th class="text-left p-2 text-gray-600">Field</th>\n        ${compare.map(id=>{ const rec=DATA.find(r=>r.__id===id); return `<th class="text-left p-2 text-gray-600">${esc(rec.__display_name)}</th>`; }).join('')}\n      </tr>`;
+      let html = header;
+      cols.forEach(col=>{
+        html += `<tr class="border-t">\n          <th class="text-left align-top p-2 text-gray-600">${esc(col)}</th>\n          ${compare.map(id=>{ const rec=DATA.find(r=>r.__id===id); let val = rec[col] || ''; if(/^https?:\/\//i.test(String(val))) val = `<a href="${val}" target="_blank" rel="noopener" class="text-blue-600 hover:underline">Open ↗</a>`; return `<td class="p-2 align-top">${val ? esc(String(val)).replace(/(https?:\/\/\S+)/g,'<a href="$1" target="_blank" rel="noopener" class="text-blue-600 hover:underline">$1<\/a>') : ''}</td>`; }).join('')}\n        </tr>`;
+      });
+      tbl.innerHTML = html;
+    }
+
+    function applyFilters(){
+      let rows = DATA.filter(matchRecord);
+      const dedupe = document.getElementById('dedupeVendor');
+      if(dedupe && dedupe.checked) rows = keyByVendorTool(rows);
+      renderList(rows);
+      renderCompare();
+      renderActiveChips();
+    }
+
+    function renderActiveChips(){
+      chipsEl.innerHTML='';
+      // Show a couple of common chips for demo: Regions Served and Year Founded
+      const regionsCtl = CONTROLS.get('Regions Served');
+      if(regionsCtl){ regionsCtl.get().forEach(v => chipsEl.appendChild(makeChip(v, ()=>{ // uncheck that checkbox
+        const inputs = filtersWrap.querySelectorAll(`label:contains('${CSS.escape(v)}') input`); // not perfect but fine; fallback below
+        Array.from(filtersWrap.querySelectorAll('input[type=checkbox]')).forEach(inp=>{ if(inp.value===v) inp.checked=false; });
+        applyFilters();
+      }))); }
+      const yrCtl = CONTROLS.get('Year Founded');
+      if(yrCtl){ const r=yrCtl.get(); if(r.min){ chipsEl.appendChild(makeChip('Founded ≥ '+r.min, ()=>{ filtersWrap.querySelector('.min').value=''; applyFilters(); })); }
+                 if(r.max){ chipsEl.appendChild(makeChip('Founded ≤ '+r.max, ()=>{ filtersWrap.querySelector('.max').value=''; applyFilters(); })); } }
+    }
+    function makeChip(text, onX){ const span=document.createElement('span'); span.className='inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800'; span.textContent=text; const btn=document.createElement('button'); btn.className='ml-2 text-blue-600 hover:text-blue-800'; btn.innerHTML='×'; btn.addEventListener('click', onX); span.appendChild(btn); return span; }
+
+    // ===== CSV Loader =====
+    function normalizeRows(rows){
+      if(!rows.length) return [];
+      const out=[]; rows.forEach((r,i)=>{
+        const vendor = r['Vendor Name'] || r['Vendor'] || r['Company'] || '';
+        const tool   = r['Product Name'] || r['Tool'] || r['Product'] || '';
+        const url    = r['Vendor Website'] || r['Website'] || r['URL'] || '';
+        const id = (vendor||'')+'|'+(tool||'')+'|'+(url||'')+'|'+i;
+        const display = tool ? (String(vendor).toLowerCase().includes(String(tool).toLowerCase()) ? String(tool) : (tool+' — '+(vendor||''))) : (vendor||'Unnamed Tool');
+        const rec = Object.assign({}, r, { __id:id, __display_name:display });
+        out.push(rec);
+      });
+      const uniq=new Set(), dedup=[]; out.forEach(r=>{ const k=JSON.stringify(r); if(!uniq.has(k)){ uniq.add(k); dedup.push(r);} });
+      return dedup;
+    }
+
+    function loadCSVFromText(text){
+      const parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
+      if(parsed.errors && parsed.errors.length){ alert('CSV parse error: '+parsed.errors[0].message); }
+      DATA = normalizeRows(parsed.data);
+      buildFilters();
+      document.getElementById('filter-groups').addEventListener('input', applyFilters);
+      applyFilters();
+    }
+
+    // ===== Events =====
+    document.getElementById('loadBtn').onclick = () => document.getElementById('fileInput').click();
+    document.getElementById('fileInput').addEventListener('change', (e)=>{ const f=e.target.files && e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ loadCSVFromText(r.result); }; r.readAsText(f); });
+    document.getElementById('pasteBtn').onclick = () => { const t=prompt('Paste CSV content here, then press OK.'); if(t) loadCSVFromText(t); };
+    document.getElementById('clearFilters').onclick = () => { buildFilters(); applyFilters(); };
+    document.getElementById('q').addEventListener('input', applyFilters);
+
+    // Fullscreen mode toggles (same behavior as your original)
+    function setMode(mode){ document.body.classList.remove('mode-left','mode-mid','mode-right'); if(mode) document.body.classList.add(mode); }
+    function activeMode(){ if(document.body.classList.contains('mode-left')) return 'mode-left'; if(document.body.classList.contains('mode-mid')) return 'mode-mid'; if(document.body.classList.contains('mode-right')) return 'mode-right'; return ''; }
+    function updateModeButtons(){ const am=activeMode(); const leftBtn=document.getElementById('toggleLeft'); const midBtn=document.getElementById('toggleMid'); const rightBtn=document.getElementById('toggleRight'); leftBtn.title = (am==='mode-left')? 'Minimise':'Expand filters'; midBtn.title=(am==='mode-mid')?'Minimise':'Expand results'; rightBtn.title=(am==='mode-right')?'Minimise':'Expand details'; }
+    document.getElementById('toggleLeft').onclick  = ()=>{ setMode(activeMode()==='mode-left' ? '' : 'mode-left'); updateModeButtons(); };
+    document.getElementById('toggleMid').onclick   = ()=>{ setMode(activeMode()==='mode-mid'  ? '' : 'mode-mid');  updateModeButtons(); };
+    document.getElementById('toggleRight').onclick = ()=>{ setMode(activeMode()==='mode-right'? '' : 'mode-right'); updateModeButtons(); };
+    window.addEventListener('keydown', e=>{ if(e.key==='Escape') { setMode(''); updateModeButtons(); } });
+
+    // Initial build + render
+    buildFilters();
+    document.getElementById('filter-groups').addEventListener('input', applyFilters);
+    updateModeButtons();
+    applyFilters();
+  </script>
+</body>
+</html>

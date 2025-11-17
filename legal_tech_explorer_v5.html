@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legal‑Tech Explorer — 50‑Tool Demo (Logos + CSV + Toggle Fullscreen)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b1220; --panel:#0e1526; --card:#0f1a33; --card2:#0b172f; --border:rgba(255,255,255,.12);
+    --muted:#97a3b6; --text:#e8f0ff; --accent:#7aa2f7; --chipbg:rgba(255,255,255,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:linear-gradient(180deg,var(--bg),#0a0f1c);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  header{position:sticky;top:0;z-index:10;display:flex;gap:10px;align-items:center;padding:10px 14px;background:rgba(5,8,14,.7);backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+  header h1{margin:0;font-size:16px;font-weight:700}
+  .sub{color:var(--muted);font-size:12px}
+  .wrap{display:grid;grid-template-columns:320px 1fr 420px;gap:12px;padding:12px;min-height:calc(100vh - 52px)}
+  aside.left,aside.right{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:12px;min-height:0}
+  main{min-height:0;display:flex;flex-direction:column;gap:12px}
+  .box{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}
+  .box.alt{background:var(--card2)}
+  .toolbar{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+  .col-title{font-weight:800;letter-spacing:.3px;text-transform:uppercase;font-size:11px;color:var(--muted)}
+  .btn{padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text);cursor:pointer}
+  .btn:hover{border-color:rgba(255,255,255,.24)}
+
+  /* Filters */
+  .filters details.group{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px;margin:8px 0}
+  .filters details.group>summary{cursor:pointer;list-style:none;color:var(--text);font-weight:700}
+  .filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .filter-field{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+  .filter-field label{font-size:12px;color:var(--muted)}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;background:var(--chipbg);border:1px solid var(--border);border-radius:999px;cursor:pointer}
+  .chip input{accent-color:var(--accent)}
+  input[type="search"],input[type="number"],select{width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#0b1428;color:var(--text)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+  /* Results */
+  .tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .tool{border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--card2);display:flex;flex-direction:column;gap:8px}
+  .tool-head{display:flex;align-items:center;gap:10px}
+  .title{font-weight:700;font-size:14px}
+  .meta{color:var(--muted);font-size:12px}
+  .desc{color:#dfe7ff;font-size:12px}
+  .actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px}
+
+  /* Logo visuals */
+  .logo{width:32px;height:32px;object-fit:contain;border-radius:8px;background:#fff2;border:1px solid rgba(255,255,255,0.1);padding:4px;flex:0 0 auto}
+  .logo-lg{width:64px;height:64px}
+  .logo-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;background:#223357;color:#cfe0ff;border:1px solid rgba(255,255,255,.1)}
+  .logo-badge-lg{width:64px;height:64px}
+
+  /* Sticky columns */
+  .left{position:sticky;top:54px;align-self:start}
+  .right{position:sticky;top:54px;align-self:start}
+
+  /* Fullscreen modes */
+  body.mode-left .wrap{grid-template-columns:1fr}
+  body.mode-left main, body.mode-left .right{display:none}
+  body.mode-mid .wrap{grid-template-columns:1fr}
+  body.mode-mid .left, body.mode-mid .right{display:none}
+  body.mode-right .wrap{grid-template-columns:1fr}
+  body.mode-right .left, body.mode-right main{display:none}
+  /* Results */
+  .tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .tool{border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--card2);display:flex;flex-direction:column;gap:8px}
+  .tool-head{display:flex;align-items:center;gap:10px}
+  .title{font-weight:700;font-size:14px}
+  .meta{color:var(--muted);font-size:12px}
+  .desc{color:#dfe7ff;font-size:12px}
+  .actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px}
+
+  /* Logo visuals */
+  .logo{width:56px;height:56px;object-fit:contain;border-radius:8px;background:#fff2;border:1px solid rgba(255,255,255,0.1);padding:4px;flex:0 0 auto}
+  .logo-lg{width:64px;height:64px}
+  .logo-badge{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;background:#223357;color:#cfe0ff;border:1px solid rgba(255,255,255,.1)}
+  .logo-badge-lg{width:64px;height:64px}
+
+  /* Sticky columns */
+  .left{position:sticky;top:54px;align-self:start}
+  .right{position:sticky;top:54px;align-self:start}
+
+    /* Column scrolling: native hover-based (no global wheel intercept) */
+  .left, main, .right{overflow:auto; outline:none; max-height:calc(100vh - 60px);} /* 60px ≈ header */
+
+  /* Fullscreen modes */
+  body.mode-left .wrap{grid-template-columns:1fr}
+  body.mode-left main, body.mode-left .right{display:none}
+  body.mode-mid .wrap{grid-template-columns:1fr}
+  body.mode-mid .left, body.mode-mid .right{display:none}
+  body.mode-right .wrap{grid-template-columns:1fr}
+  body.mode-right .left, body.mode-right main{display:none}
+
+    /* Compare table: clearer row separation (no horizontal lines) + soft zebra rows + vertical dividers between vendor columns */
+  table.compare{width:100%; border-collapse:separate; border-spacing:0 10px; font-size:12px}
+  table.compare th, table.compare td{border:none; padding:8px; vertical-align:top}
+  /* vertical lines between compared vendors */
+  table.compare th:not(:first-child),
+  table.compare td:not(:first-child){ border-left:2px solid rgba(255,255,255,0.12); }
+  /* rounded row cards */
+  table.compare tr > th:first-child, table.compare tr > td:first-child{border-top-left-radius:8px; border-bottom-left-radius:8px}
+  table.compare tr > th:last-child,  table.compare tr > td:last-child{border-top-right-radius:8px; border-bottom-right-radius:8px}
+  /* zebra tint by row */
+  table.compare tr:nth-child(odd)  > *{background:rgba(255,255,255,0.05)}
+  table.compare tr:nth-child(even) > *{background:rgba(255,255,255,0.03)}
+  /* subtle inset separator inside each row cell */
+  table.compare tr > *{box-shadow:0 1px 0 rgba(255,255,255,0.06) inset}
+</style>
+</head>
+<body>
+  <header>
+    <h1>Legal‑Tech Explorer</h1>
+    <div class="sub">Clario</div>
+    <span style="flex:1"></span>
+    <button id="loadBtn" class="btn">Load CSV</button>
+    <input id="fileInput" type="file" accept=".csv" style="display:none" />
+    <button id="pasteBtn" class="btn" title="Paste CSV text">Paste CSV</button>
+  </header>
+
+  <div class="wrap">
+    <aside class="left">
+      <div class="toolbar"><div class="col-title">Filters</div><div><button class="btn" id="toggleLeft">Expand</button></div></div>
+      <div class="box filters">
+        <div class="sub" style="margin-bottom:6px">Schema‑driven facets</div>
+        <!-- dynamic filters injected here -->
+      </div>
+    </aside>
+
+    <main>
+      <div class="toolbar"><div class="col-title">Results</div><div><span class="sub" id="count"></span> <button class="btn" id="toggleMid">Expand</button></div></div>
+      <div class="box alt">
+        <div id="tools" class="tools"></div>
+      </div>
+    </main>
+
+    <aside class="right">
+      <div class="toolbar"><div class="col-title">Details</div><div><button class="btn" id="toggleRight">Expand</button></div></div>
+      <div class="box">
+        <div id="details">Select a tool to see full info.</div>
+      </div>
+      <div class="box">
+        <div class="col-title">Comparison (up to 5)</div>
+        <div id="compareList" class="filter-row"></div>
+        <div style="height:8px"></div>
+        <div style="max-height:360px;overflow:auto"><table class="compare" id="compareTable"></table></div>
+      </div>
+    </aside>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js">  // ===== Scroll control: last-clicked/hovered column owns the wheel =====
+  </script>
+<script>
+  // ===== Schema (fields, groups, and types) =====
+  var SCHEMA = [
+    { key: 'Vendor Name', group: 'Vendor Identification', type: 'text' },
+    { key: 'Vendor Overview', group: 'Vendor Identification', type: 'text' },
+    { key: 'HQ', group: 'Vendor Identification', type: 'single' },
+    { key: 'Office Locations', group: 'Vendor Identification', type: 'text' },
+    { key: 'Regions Served', group: 'Vendor Identification', type: 'multi', values: ['Australia','New Zealand','Asia-Pacific (APAC)','North America (US & Canada)','Europe (UK & EU)','United Kingdom','Middle East','Africa','Latin America','Unknown'] },
+    { key: 'Year Founded', group: 'Vendor Identification', type: 'number-range' },
+
+    { key: 'Product Name', group: 'Product Identification', type: 'text' },
+    { key: 'Product Description', group: 'Product Identification', type: 'text' },
+    { key: 'Languages supported', group: 'Product Identification', type: 'single', values: ['English only','English + Limited Other Languages','Multilingual (supports major global languages)','Unknown / To Verify'] },
+
+    { key: 'Legal Functionality – Main Category', group: 'Legal Functionality & Use Case', type: 'single', values: ['Contracting & Document Automation','Matter, Workflow & Intake Management','Legal Operations & Analytics','Outside Counsel & Spend Management','Compliance, Risk & Governance','Corporate Governance & Entity Management','Litigation, Disputes & Investigations','Intellectual Property, Technology & Data','Employment & HR Legal Support','Cross-Border, Transactions & Deal Management','Knowledge, Search & Precedent Management','AI Legal Assistants & Productivity Tools','Business Partnering & Self-Service Tools','Integration & Platform Infrastructure','Legal Research & Insights.'] },
+    { key: 'Legal Functionality – Sub-Category', group: 'Legal Functionality & Use Case', type: 'single' },
+    { key: 'Main Problem Solved', group: 'Legal Functionality & Use Case', type: 'text' },
+
+    { key: 'Primary User Segment', group: 'Audience, Fit & Accessibility', type: 'multi', values: ['Corporate legal','Private practice','Alternative Legal Service Providers (ALSPs)','Legal Operations Professionals','Contract Management Teams / Procurement','Compliance & Risk Teams','Litigation / Disputes Teams','Intellectual Property Teams.'] },
+    { key: 'Industry Focus', group: 'Audience, Fit & Accessibility', type: 'single', values: ['Corporate','Government / Public Sector','Financial Services','Healthcare / Life Sciences','Education / Research','Energy / Resources','Professional Services','Other / Not Specified'] },
+
+    { key: 'AI Maturity Stage', group: 'AI Capabilities & Innovation', type: 'single', values: ['Experimental / early stage','Quick win','Advanced','Enterprise-grade'] },
+    { key: 'AI Powered', group: 'AI Capabilities & Innovation', type: 'single', values: ['Yes','No'] },
+    { key: 'AI Platform', group: 'AI Capabilities & Innovation', type: 'multi', values: ['Large Language Model (LLM) Platforms','Predictive / Machine Learning (ML) Platforms','Natural Language Processing (NLP) / Text Analytics','Computer Vision & Document Recognition','Recommendation & Decision Support Systems','Conversational / Copilot Layer','AI Integration / Orchestration Layer','Domain-Specific or Proprietary AI Engines.'] },
+    { key: 'Deployment Model', group: 'AI Capabilities & Innovation', type: 'single', values: ['Cloud (SaaS)','Private Cloud','On-Premises','Hybrid','Desktop / Local Application.'] },
+    { key: 'Hosting Location / Data Residence', group: 'AI Capabilities & Innovation', type: 'single', values: ['Australia','Asia-Pacific (ex-AU)','United States','Europe / UK','Multi-Region / Distributed Cloud','Customer-Hosted / Private Cloud','Unknown / To Verify'] },
+    { key: 'Hosting Provider', group: 'AI Capabilities & Innovation', type: 'single', values: ['AWS','Azure','Google Cloud','Other'] },
+
+    { key: 'ISO Certifications', group: 'Security, Privacy & Trust', type: 'multi', values: ['ISO 27001','ISO 27017','ISO 27018','ISO 27701','ISO 22301','ISO 9001','ISO 20000'] },
+    { key: 'Security & Compliance Certifications', group: 'Security, Privacy & Trust', type: 'multi', values: ['SOC 1 (Type I or II)','SOC 2 (Type I or II)','SOC 3','GDPR Compliance (EU)','CCPA Compliance (US)','HIPAA Compliance (US)','FedRAMP, Authorization (US)','IRAP Assessment (AU)','CSA STAR Certification','Cyber Essentials / Plus (UK).'] },
+
+    { key: 'Pricing Model', group: 'Commercials & Procurement', type: 'single', values: ['Subscription (SaaS)','Usage-Based / Consumption','Per Seat / License','Tiered / Plan-Based','Enterprise Custom Quote','Freemium / Free Trial','One-Time Purchase / Perpetual License.'] },
+    { key: 'Approx. Price Range (AUD)', group: 'Commercials & Procurement', type: 'single', values: ['<$10K','$10K–$50K','$51K-$100K','$101K+'] },
+    { key: 'Demo / Proof of Concept Available', group: 'Commercials & Procurement', type: 'single', values: ['Yes','No','Unknown'] },
+    { key: 'Adoption Level', group: 'Commercials & Procurement', type: 'single', values: ['Emerging / New Entrant','Growing Adoption','Mainstream / Proven','Market Leader / Standard','Unknown / To Verify'] },
+    { key: 'Ease of Purchase', group: 'Commercials & Procurement', type: 'single', values: ['Very Easy','Easy','Moderate','Complex'] },
+
+    { key: 'Customer Reviews', group: 'Customer Reviews', type: 'text' },
+    { key: 'Customer Feedback Rating', group: 'Customer Reviews', type: 'number-range' },
+
+    { key: 'Vendor Contact Details', group: 'Vendor Identification', type: 'text' },
+    { key: 'Vendor Website', group: 'Vendor Identification', type: 'text' }
+  ];
+
+  // ===== Data (seed; replaced when CSV is loaded) =====
+  var DATA = [{
+    "__id":"actionstep-actionstep-https-www-actionstep-com-0",
+    "__display_name":"Actionstep — Actionstep",
+    "Vendor Name":"Actionstep",
+    "Vendor Overview":"Actionstep is a modern, adaptable law firm management platform designed to streamline legal operations and improve client service.",
+    "HQ":"New Zealand",
+    "Regions Served":"Asia-Pacific (APAC); North America (US & Canada); Europe (UK & EU); Latin America",
+    "Year Founded":"2004",
+    "Product Name":"Actionstep",
+    "Product Description":"Comprehensive practice management with workflows, matter management, document automation, and billing.",
+    "Languages supported":"English only",
+    "Legal Functionality – Main Category":"Matter, Workflow & Intake Management",
+    "Legal Functionality – Sub-Category":"Workflow Automation",
+    "Primary User Segment":"Corporate legal; Legal Operations Professionals",
+    "AI Maturity Stage":"Enterprise-grade",
+    "AI Powered":"Yes",
+    "AI Platform":"Large Language Model (LLM) Platforms; AI Integration / Orchestration Layer",
+    "Deployment Model":"Cloud (SaaS)",
+    "Hosting Location / Data Residence":"Multi-Region / Distributed Cloud",
+    "Hosting Provider":"AWS",
+    "ISO Certifications":"ISO 27001",
+    "Security & Compliance Certifications":"SOC 2 (Type I or II); GDPR Compliance (EU)",
+    "Pricing Model":"Subscription (SaaS)",
+    "Approx. Price Range (AUD)":"$10K–$50K",
+    "Demo / Proof of Concept Available":"Yes",
+    "Adoption Level":"Mainstream / Proven",
+    "Ease of Purchase":"Moderate",
+    "Customer Reviews":"Well regarded by midsize firms",
+    "Customer Feedback Rating":"4.3",
+    "Vendor Contact Details":"https://www.actionstep.com/contact/",
+    "Vendor Website":"https://www.actionstep.com/"
+  }];
+
+  // ===== Helpers =====
+  function esc(s){ return (s||'').toString().replace(/[&<>"]/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m];}); }
+  function splitMulti(v){ if(!v) return []; return String(v).split(/[;,|\/\n]+/).map(function(x){return x.trim();}).filter(Boolean); }
+  function vendorSlug(name){ return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  function vendorNoSpace(name){ return String(name||'').replace(/\s+/g,''); }
+  function logoCandidates(name){ var a=[]; var raw=vendorNoSpace(name); var slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(function(ext){ a.push('logos/'+raw+'.'+ext); a.push('logos/'+slug+'.'+ext); }); return a; }
+  function makeLogoEl(name, big){
+    var img = document.createElement('img'); img.className = big? 'logo logo-lg':'logo';
+    var tries = logoCandidates(name); if(!tries.length){ return initialsBadge(name,big); }
+    img.dataset.tries = JSON.stringify(tries); img.dataset.try = '0'; img.alt = name+' logo';
+    img.src = tries[0];
+    img.onerror = function(){ var idx = +img.dataset.try + 1; var arr = JSON.parse(img.dataset.tries); if(idx < arr.length){ img.dataset.try = String(idx); img.src = arr[idx]; } else { var badge = initialsBadge(name, big); img.replaceWith(badge); } };
+    return img;
+  }
+  function initialsBadge(name, big){ var d=document.createElement('div'); d.className = big? 'logo-badge logo-badge-lg':'logo-badge'; var t=(name||'').trim(); var parts=t.split(/\s+/); var ini=''; if(parts.length>1){ ini=parts[0][0]+parts[parts.length-1][0]; } else { ini=t.slice(0,2); } d.textContent=ini.toUpperCase(); return d; }
+
+  var filtersBox = document.querySelector('.filters');
+  var toolsEl = document.getElementById('tools');
+  var detailsEl = document.getElementById('details');
+  var countEl = document.getElementById('count');
+
+  var CONTROLS = new Map();
+
+  function buildFilters(){
+    CONTROLS = new Map();
+    filtersBox.innerHTML = '<div class="sub" style="margin-bottom:6px">Schema‑driven facets</div>';
+
+    // Quick search
+    var quick = document.createElement('div');
+    quick.className = 'filter-field';
+    quick.innerHTML = '<label>Quick Search</label><input id="q" type="search" placeholder="Search tool, vendor, description…">';
+    filtersBox.appendChild(quick);
+    window.q = document.getElementById('q');
+
+    function groupContainer(title){
+      var d = document.createElement('details'); d.className='group'; d.open = false; // collapsed by default
+      d.innerHTML = '<summary>'+esc(title)+'</summary>';
+      filtersBox.appendChild(d); return d;
+    }
+
+    function uniqueValues(key){
+      var cfg = SCHEMA.find(function(s){return s.key===key;});
+      if(cfg && cfg.values) return cfg.values;
+      var vals = {};
+      DATA.forEach(function(r){
+        var arr = splitMulti(r[key]);
+        if(arr.length){ arr.forEach(function(v){ vals[v]=1; }); }
+        else if(r[key]){ vals[String(r[key])] = 1; }
+      });
+      return Object.keys(vals).sort();
+    }
+
+    function addTextControl(parent, key, placeholder){
+      var wrap = document.createElement('div'); wrap.className='filter-field';
+      wrap.innerHTML = '<label>'+esc(key)+'</label><input data-key="'+esc(key)+'" type="search" placeholder="'+esc(placeholder||'Search…')+'">';
+      parent.appendChild(wrap);
+      var el = wrap.querySelector('input');
+      CONTROLS.set(key, { type:'text', get:function(){ return el.value.trim(); } });
+    }
+
+    function addSingleSelect(parent, key, options){
+      var wrap = document.createElement('div'); wrap.className='filter-field';
+      var html = '<label>'+esc(key)+'</label><select data-key="'+esc(key)+'"><option value="">Any</option>';
+      options.forEach(function(v){ html += '<option>'+esc(v)+'</option>'; });
+      html += '</select>';
+      wrap.innerHTML = html; parent.appendChild(wrap);
+      var sel = wrap.querySelector('select');
+      CONTROLS.set(key, { type:'single', get:function(){ return sel.value; } });
+    }
+
+    function addMultiChips(parent, key, options){
+      var wrap = document.createElement('div'); wrap.className='filter-field';
+      wrap.innerHTML = '<label>'+esc(key)+'</label><div class="filter-row"></div>';
+      parent.appendChild(wrap);
+      var row = wrap.querySelector('.filter-row');
+      options.forEach(function(v){
+        var lab = document.createElement('label'); lab.className='chip';
+        lab.innerHTML = '<input type="checkbox" value="'+esc(v)+'"> <span>'+esc(v)+'</span>';
+        row.appendChild(lab);
+      });
+      CONTROLS.set(key, { type:'multi', get:function(){ return Array.prototype.map.call(row.querySelectorAll('input:checked'), function(c){return c.value;}); } });
+    }
+
+    function addNumberRange(parent, key){
+      var wrap = document.createElement('div'); wrap.className='filter-field';
+      wrap.innerHTML = '<label>'+esc(key)+'</label><div class="two"><input type="number" placeholder="Min" class="min"><input type="number" placeholder="Max" class="max"></div>';
+      parent.appendChild(wrap);
+      var minEl = wrap.querySelector('.min'); var maxEl = wrap.querySelector('.max');
+      CONTROLS.set(key, { type:'number-range', get:function(){ return {min:minEl.value, max:maxEl.value}; } });
+    }
+
+    // Build grouped filters
+    var groups = [];
+    SCHEMA.forEach(function(s){ if(groups.indexOf(s.group)===-1) groups.push(s.group); });
+    groups.forEach(function(grp){
+      var sec = groupContainer(grp);
+      var inner = document.createElement('div'); sec.appendChild(inner);
+      SCHEMA.filter(function(s){return s.group===grp;}).forEach(function(field){
+        var opts = uniqueValues(field.key);
+        if(field.type==='text') addTextControl(inner, field.key);
+        else if(field.type==='single') addSingleSelect(inner, field.key, opts);
+        else if(field.type==='multi') addMultiChips(inner, field.key, opts);
+        else if(field.type==='number-range') addNumberRange(inner, field.key);
+      });
+    });
+
+    // Options row (dedupe)
+    var dedupeRow = document.createElement('div'); dedupeRow.className='filter-field';
+    dedupeRow.innerHTML = '<label>Options</label><label style="font-size:12px;color:var(--muted)"><input id="dedupeVendor" type="checkbox" checked> Deduplicate identical rows</label>';
+    filtersBox.appendChild(dedupeRow);
+  }
+
+  // ===== Filtering & rendering =====
+  function quickBlob(rec){
+    return (rec.__display_name+' '+(rec['Vendor Name']||'')+' '+(rec['Product Name']||'')+' '+(rec['Product Description']||'')+' '+(rec['Vendor Overview']||''));
+  }
+  function numberInRange(rec, key, range){
+    if(!range || (!range.min && !range.max)) return true;
+    var n = parseFloat(rec[key]); if(isNaN(n)) return false;
+    if(range.min && n < parseFloat(range.min)) return false;
+    if(range.max && n > parseFloat(range.max)) return false;
+    return true;
+  }
+  function multiMatch(recVal, selected){
+    if(!selected || !selected.length) return true;
+    var hay = splitMulti(recVal);
+    var set = {}; hay.forEach(function(v){ set[v]=1; });
+    for(var i=0;i<selected.length;i++){ if(set[selected[i]]) return true; }
+    return false;
+  }
+  function matchRecord(rec){
+    var t = (window.q && q.value.trim().toLowerCase()) || '';
+    if(t){ if(quickBlob(rec).toLowerCase().indexOf(t)===-1) return false; }
+    // field-by-field
+    for(var i=0;i<SCHEMA.length;i++){
+      var cfg = SCHEMA[i]; var ctl = CONTROLS.get(cfg.key); if(!ctl) continue; var val = ctl.get();
+      if(!val || (Array.isArray(val)&&!val.length)) continue;
+      if(cfg.type==='text'){ if(String(rec[cfg.key]||'').toLowerCase().indexOf(String(val).toLowerCase())===-1) return false; }
+      else if(cfg.type==='single'){ if(String(rec[cfg.key]||'')!==String(val)) return false; }
+      else if(cfg.type==='multi'){ if(!multiMatch(rec[cfg.key], val)) return false; }
+      else if(cfg.type==='number-range'){ if(!numberInRange(rec, cfg.key, val)) return false; }
+    }
+    return true;
+  }
+  function keyByVendorTool(rows){
+    var seen={}, out=[]; rows.forEach(function(r){ var k=(r['Vendor Name']||'')+'|'+(r['Product Name']||'')+'|'+(r['Vendor Website']||''); if(!seen[k]){ seen[k]=1; out.push(r);} }); return out;
+  }
+
+  var compare = [];
+  function toggleCompare(id){ var i=compare.indexOf(id); if(i===-1){ if(compare.length>=5) return; compare.push(id);} else compare.splice(i,1); renderCompare(); }
+
+  function renderList(rows){
+    countEl.textContent = rows.length + ' tools';
+    toolsEl.innerHTML = '';
+    rows.slice(0,200).forEach(function(rec){
+      var url = rec['Vendor Website'] || '';
+      var chosen = compare.indexOf(rec.__id)!==-1;
+      var cats = splitMulti(rec['Legal Functionality – Main Category']).concat(splitMulti(rec['Legal Functionality – Sub-Category']));
+      var chips = cats.map(function(c){ return '<span class="chip" style="padding:2px 6px;font-size:11px">'+esc(c)+'</span>'; }).join(' ');
+      var card = document.createElement('div'); card.className='tool'; card.dataset.id = rec.__id;
+
+      // header with logo + title
+      var head = document.createElement('div'); head.className='tool-head';
+      head.appendChild(makeLogoEl(rec['Vendor Name']||rec['Vendor']||''));
+      var titleWrap = document.createElement('div');
+      titleWrap.innerHTML = '<div class="title">'+esc(rec.__display_name||rec['Product Name']||rec['Vendor Name']||'Unnamed')+'</div>'+
+                            '<div class="meta">'+esc(rec['Vendor Name']||'')+' • <span>'+esc(rec['HQ']||'')+'</span> '+(url?('• <a href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>'):'')+'</div>';
+      head.appendChild(titleWrap);
+
+      var desc = document.createElement('div'); desc.className='desc'; desc.textContent = rec['Product Description']||'';
+      var chipRow = document.createElement('div'); chipRow.className='filter-row'; chipRow.innerHTML = chips;
+
+      var act = document.createElement('div'); act.className='actions';
+      var detailsBtn = document.createElement('button'); detailsBtn.className='btn btn-details'; detailsBtn.textContent='Details';
+      var cmpBtn = document.createElement('button'); cmpBtn.className='btn btn-compare'; cmpBtn.textContent = chosen? 'Remove from compare':'Add to compare';
+      act.appendChild(detailsBtn); act.appendChild(cmpBtn);
+
+      card.appendChild(head); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
+      toolsEl.appendChild(card);
+    });
+
+    Array.prototype.forEach.call(toolsEl.querySelectorAll('.btn-details'), function(btn){
+      btn.addEventListener('click', function(e){ var id=e.target.closest('.tool').dataset.id; var rec=DATA.find(function(r){return r.__id===id;}); renderDetails(rec); });
+    });
+    Array.prototype.forEach.call(toolsEl.querySelectorAll('.btn-compare'), function(btn){
+      btn.addEventListener('click', function(e){ var id=e.target.closest('.tool').dataset.id; toggleCompare(id); applyFilters(); });
+    });
+  }
+
+  function renderDetails(rec){
+    if(!rec){ detailsEl.textContent='No record'; return; }
+    var top = document.createElement('div'); top.style.display='flex'; top.style.gap='10px'; top.style.alignItems='center'; top.style.marginBottom='8px';
+    top.appendChild(makeLogoEl(rec['Vendor Name']||'', true));
+    var name = document.createElement('div'); name.innerHTML = '<div class="title">'+esc(rec.__display_name||'')+'</div>';
+    top.appendChild(name);
+
+    var rows='';
+    Object.keys(rec).forEach(function(k){
+      if(/^_/.test(k) || /^__/.test(k)) return;
+      var v = rec[k]; if(v==null || v==='') return;
+      var val = esc(v);
+      if(/^https?:\/\//i.test(String(v))) val = '<a href="'+v+'" target="_blank" rel="noopener">'+esc(v)+'</a>';
+      rows += '<tr><th>'+esc(k)+'</th><td>'+val+'</td></tr>';
+    });
+    detailsEl.innerHTML = '';
+    detailsEl.appendChild(top);
+    var tbl = document.createElement('table'); tbl.className='compare'; tbl.innerHTML = rows; detailsEl.appendChild(tbl);
+  }
+
+  function renderCompare(){
+    var list=document.getElementById('compareList'); var tbl=document.getElementById('compareTable');
+    list.innerHTML=''; if(!compare.length){ tbl.innerHTML='<tr><td style="color:var(--muted)">Nothing selected</td></tr>'; return; }
+    compare.forEach(function(id){ var rec=DATA.find(function(r){return r.__id===id;}); var pill=document.createElement('div'); pill.className='chip';
+      var span=document.createElement('span'); span.appendChild(makeLogoEl(rec['Vendor Name']||'')); pill.appendChild(span);
+      var name=document.createElement('span'); name.textContent = ' '+(rec.__display_name||''); pill.appendChild(name);
+      var x=document.createElement('span'); x.textContent='✕'; x.className='x'; x.style.cursor='pointer'; x.dataset.id=id; pill.appendChild(x);
+      list.appendChild(pill);
+    });
+    Array.prototype.forEach.call(list.querySelectorAll('.x'), function(x){ x.addEventListener('click', function(e){ var id=e.target.getAttribute('data-id'); var i=compare.indexOf(id); if(i!==-1){ compare.splice(i,1); renderCompare(); } }); });
+
+    var cols = SCHEMA.map(function(s){return s.key;}).slice(0,24);
+    var header = '<tr><th>Field</th>' + compare.map(function(id){ var rec=DATA.find(function(r){return r.__id===id;}); return '<th>'+esc(rec.__display_name)+'</th>'; }).join('') + '</tr>';
+    var html = header;
+    cols.forEach(function(col){
+      html += '<tr><th>'+esc(col)+'</th>';
+      compare.forEach(function(id){ var rec=DATA.find(function(r){return r.__id===id;}); var val = rec[col] || ''; if(/^https?:\/\//i.test(String(val))) val = '<a href="'+val+'" target="_blank" rel="noopener">Open ↗</a>'; html += '<td>'+ (val? esc(String(val)).replace(/(https?:\/\/\S+)/g,'<a href="$1" target="_blank" rel="noopener">$1</a>') : '') + '</td>'; });
+      html += '</tr>';
+    });
+    tbl.innerHTML = html;
+  }
+
+  function applyFilters(){
+    var rows = DATA.filter(matchRecord);
+    var dedupe = document.getElementById('dedupeVendor');
+    if(dedupe && dedupe.checked) rows = keyByVendorTool(rows);
+    renderList(rows);
+    renderCompare();
+  }
+
+  // ===== CSV Loader =====
+  function normalizeRows(rows){
+    if(!rows.length) return [];
+    var out = []; rows.forEach(function(r, i){
+      var vendor = r['Vendor Name'] || r['Vendor'] || r['Company'] || '';
+      var tool   = r['Product Name'] || r['Tool'] || r['Product'] || '';
+      var url    = r['Vendor Website'] || r['Website'] || r['URL'] || '';
+      var id = (vendor||'')+'|'+(tool||'')+'|'+(url||'')+'|'+i;
+      var display = tool ? (String(vendor).toLowerCase().indexOf(String(tool).toLowerCase())>-1 ? String(tool) : (tool+' — '+(vendor||''))) : (vendor||'Unnamed Tool');
+      var rec = Object.assign({}, r, { __id:id, __display_name:display });
+      out.push(rec);
+    });
+    // crude exact-dup removal
+    var uniq = {}; var dedup=[]; out.forEach(function(r){ var k=JSON.stringify(r); if(!uniq[k]){ uniq[k]=1; dedup.push(r);} });
+    return dedup;
+  }
+
+  function loadCSVFromText(text){
+    var parsed = Papa.parse(text, { header:true, skipEmptyLines:true });
+    if(parsed.errors && parsed.errors.length){ alert('CSV parse error: '+parsed.errors[0].message); }
+    DATA = normalizeRows(parsed.data);
+    buildFilters();
+    filtersBox.addEventListener('input', applyFilters);
+    applyFilters();
+  }
+
+  document.getElementById('loadBtn').onclick = function(){ document.getElementById('fileInput').click(); };
+  document.getElementById('fileInput').addEventListener('change', function(e){ var f=e.target.files && e.target.files[0]; if(!f) return; var r=new FileReader(); r.onload=function(){ loadCSVFromText(r.result); }; r.readAsText(f); });
+  document.getElementById('pasteBtn').onclick = function(){ var t=prompt('Paste CSV content here, then press OK.'); if(t) loadCSVFromText(t); };
+
+  // ===== Fullscreen toggle buttons (single button expand/minimise) =====
+  function setMode(mode){ document.body.classList.remove('mode-left','mode-mid','mode-right'); if(mode) document.body.classList.add(mode); updateModeButtons(); }
+  function activeMode(){ if(document.body.classList.contains('mode-left')) return 'mode-left'; if(document.body.classList.contains('mode-mid')) return 'mode-mid'; if(document.body.classList.contains('mode-right')) return 'mode-right'; return ''; }
+  function updateModeButtons(){
+    var am = activeMode();
+    var leftBtn = document.getElementById('toggleLeft');
+    var midBtn  = document.getElementById('toggleMid');
+    var rightBtn= document.getElementById('toggleRight');
+    leftBtn.textContent  = (am==='mode-left')  ? 'Minimise' : 'Expand';
+    midBtn.textContent   = (am==='mode-mid')   ? 'Minimise' : 'Expand';
+    rightBtn.textContent = (am==='mode-right') ? 'Minimise' : 'Expand';
+  }
+  document.getElementById('toggleLeft').onclick  = function(){ setMode(activeMode()==='mode-left' ? '' : 'mode-left'); };
+  document.getElementById('toggleMid').onclick   = function(){ setMode(activeMode()==='mode-mid'  ? '' : 'mode-mid'); };
+  document.getElementById('toggleRight').onclick = function(){ setMode(activeMode()==='mode-right'? '' : 'mode-right'); };
+  window.addEventListener('keydown', function(e){ if(e.key==='Escape') setMode(''); });
+
+  // Initial build + render
+  buildFilters();
+  filtersBox.addEventListener('input', applyFilters);
+  updateModeButtons();
+  applyFilters();
+</script>
+</body>
+</html>
