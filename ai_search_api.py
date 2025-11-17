@@ -5,7 +5,8 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -33,6 +34,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # =========================
 # Schema your UI understands
@@ -223,7 +227,7 @@ def call_openai_json(system_msg: str, user_msg: str) -> Dict[str, Any]:
 # =========================
 @app.get("/")
 def root():
-    return RedirectResponse("/docs")
+    return FileResponse("static/index.html")
 
 @app.get("/health")
 def health():

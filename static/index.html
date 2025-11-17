@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Legal-Tech Explorer — Soft Dashboard</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#0b0a12;
+    --panel:#ffffff;
+    --muted:#5b6c7b;
+    --text:#e9eef7;
+    --accent:#22b8c3;
+    --border:#2a2d3a;
+    --chip:#1a1e2a;
+    --chip-text:#9bd6e0;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+    --scroll-thumb:#0b3a6e; --scroll-thumb-hover:#0d4a8e; --scroll-track:#131421;
+    --spotlight: rgba(0,229,255,0.20);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  header{position:sticky;top:0;z-index:20;background:#12131cba;border-bottom:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.25);backdrop-filter:blur(6px)}
+  .topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:1400px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand-logo{height:22px;filter:brightness(1.2) contrast(1.05)}
+  h1{margin:0;font-size:16px;font-weight:700;letter-spacing:.2px}
+  .sub{color:#a9b2c2;font-size:12px}
+  .spacer{flex:1}
+  .btn{padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:#171925;color:var(--text);font-weight:600;cursor:pointer;transition:.2s}
+  .btn:hover{box-shadow:0 6px 16px rgba(0,0,0,.4)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--accent);color:#001218;border-color:transparent}
+
+  /* Layout + responsive reordering */
+  .wrap{
+    display:grid;gap:16px;padding:16px;max-width:1400px;margin:0 auto;min-height:calc(100vh - 64px);
+    grid-template-columns:1fr;transition:grid-template-columns .35s ease
+  }
+  /* default order: left, main, right */
+  aside.left{order:1}
+  main{order:2}
+  aside.right{order:3}
+
+  body.state-filters .wrap{grid-template-columns:300px 1fr}
+  body.state-right .wrap{grid-template-columns:1fr 420px}
+  body.state-right.state-right-wide .wrap{grid-template-columns:1fr 720px}
+
+  /* Compare FULL WIDTH mode (make right panel come FIRST & on top) */
+  body.state-right.state-compare-full .wrap{grid-template-columns:1fr}
+  body.state-right.state-compare-full aside.right{
+    grid-column:1 / -1; order:0; position:relative; z-index:5;
+  }
+  body.state-right.state-compare-full main{order:2}
+  body.state-right.state-compare-full aside.left{order:3}
+
+  aside.left, aside.right, main{min-height:0}
+  aside.left, aside.right{
+    background:#111320cc;
+    border:1px solid var(--border);
+    border-radius:14px;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;
+    backdrop-filter:blur(10px);
+    position:relative; z-index:3;  /* keep sidebars above main when overlapping */
+  }
+  aside.left{display:none}
+  aside.right{display:none}
+  body.state-filters aside.left{display:flex}
+  body.state-right aside.right{display:flex}
+  main{display:flex;flex-direction:column;gap:16px;opacity:1;transition:opacity .25s ease; position:relative; z-index:1}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+  .col-title{font-size:12px;font-weight:800;letter-spacing:.28px;text-transform:uppercase;color:#9aa3b8}
+  .box{background:#10121e;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
+  .box.alt{background:linear-gradient(180deg,#0f1220,#0b0a12)}
+
+  .tabs{display:flex;gap:6px}
+  .tab{background:#0e1220;border:1px solid var(--border);color:#c8d1e6;font-weight:700;padding:6px 10px;border-radius:10px;cursor:pointer}
+  .tab.active{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15) inset}
+
+  .filters details.group{background:#0f1220;border:1px solid var(--border);border-radius:12px;padding:10px;margin:10px 0}
+  .filters details.group>summary{cursor:pointer;list-style:none;font-weight:700}
+  .filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+  .filter-field{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+  .filter-field label{font-size:12px;color:#9aa3b8}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:var(--chip);color:var(--chip-text);border:1px solid #263146;font-weight:600}
+  input[type="search"], select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:#0e1220;color:var(--text);outline:none}
+  input[type="search"]::placeholder{color:#77809a}
+  input[type="search"]:focus, select:focus{border-color:#3b82f6;box-shadow:0 0 0 4px rgba(59,130,246,.15)}
+
+  #tools.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+
+  /* Tool cards */
+  .tool{
+    position:relative; overflow:hidden;
+    border:1px solid var(--border); border-radius:14px; padding:12px; background:#0f1220;
+    display:flex;flex-direction:column;gap:10px;
+    transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .2s ease, filter .2s ease;
+    opacity:1; filter:none;
+    --mouse-x:50%; --mouse-y:50%; --spot-color: var(--spotlight);
+  }
+  .tool:hover{ box-shadow:0 14px 32px rgba(0,0,0,.45); transform:translateY(-1px); border-color:#3b82f6; }
+  .tool::before{
+    content:''; position:absolute; inset:0;
+    background: radial-gradient(220px circle at var(--mouse-x) var(--mouse-y), var(--spot-color), transparent 65%);
+    opacity:0; transition:opacity .25s ease; pointer-events:none;
+  }
+  .tool:hover::before{ opacity:.75; }
+
+  .tool-head{display:flex;align-items:center;gap:12px}
+  .title{font-weight:700;font-size:15px}
+  .meta{color:#9aa3b8;font-size:12px}
+  .desc{color:#c8d1e6;font-size:13px}
+  .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+  .logo{width:48px;height:48px;object-fit:contain;border-radius:10px;background:#0e1220;border:1px solid var(--border);padding:6px}
+  .logo-badge{display:flex;align-items:center;justify-content:center;font-weight:800;color:#c7d2fe;background:#0e1220;border:1px solid var(--border);border-radius:12px;width:48px;height:48px}
+
+  .left, main, .right{overflow:auto;outline:none;max-height:calc(100vh - 80px)}
+
+  /* Landing overlay */
+  #aiLanding{
+    position:fixed;inset:0;
+    background:rgba(16,13,24,0.55);
+    backdrop-filter: blur(8px) saturate(1.12);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10;padding:16px
+  }
+  .logo-chip { display:inline-flex; align-items:center; justify-content:center; padding:6px 10px; border-radius:12px;
+    background:rgba(215, 213, 213, 0.855); box-shadow:0 6px 24px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.12); }
+  .logo-chip img { filter:brightness(1.25) contrast(1.08); }
+
+  .landing-actions{display:flex; justify-content:center; gap:8px; width:100%}
+
+  /* Typewriter — single fast line */
+  .typewriter{font-size:22px; font-weight:700; color:#e9eef7; line-height:1.25; text-align:center;}
+  .typewriter .cursor{display:inline-block; margin-left:.2rem; width:1ch; animation: blink .85s steps(1) infinite;}
+  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+  /* Aurora */
+  .aurora-bg{ pointer-events:none; filter:saturate(1.12) contrast(1.06); }
+  .aurora-bg.fullscreen{ position:fixed; inset:0; z-index:0; }
+  .aurora-bg.css-fallback{
+    background:
+      radial-gradient(120% 80% at 12% 4%,  #29ff7a20, transparent 60%),
+      radial-gradient(120% 80% at 88% 0%,  #693bff20, transparent 60%),
+      linear-gradient(160deg, #111321 0%, #0b0a12 60%);
+    animation: auroraShift 10s linear infinite alternate;
+  }
+  @keyframes auroraShift{ 0%{ filter:hue-rotate(0deg) } 100%{ filter:hue-rotate(15deg) } }
+
+  /* Compare table */
+  .compare-wrap { max-height: 360px; overflow:auto; overflow-x:auto; }
+  #compareTable{ min-width:900px; }
+  .compare thead th {
+    position: sticky; top: 0; z-index: 2;
+    background:#0f1220; border:1px solid var(--border);
+    box-shadow:0 2px 0 rgba(0,0,0,.15);
+  }
+  .compare thead th .head-cell { display:flex; align-items:center; gap:8px; white-space:nowrap; }
+  .compare thead th .head-logo { width:22px; height:22px; border-radius:6px; object-fit:contain; background:#0e1220; border:1px solid var(--border); padding:2px; }
+  .compare thead th .head-badge { width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:800; background:#0e1220; border:1px solid var(--border); font-size:11px; }
+
+  #compareList{ display:none !important; } /* hidden pill row */
+
+  /* Staggered reveal for list */
+  .reveal-child{opacity:0; transform:translateY(8px); transition:opacity .28s ease, transform .28s ease}
+  .reveal-child.revealed{opacity:1; transform:translateY(0)}
+
+  /* ====== PANEL ANIMATIONS ====== */
+  @keyframes panelIn { from{opacity:0; transform: translateY(8px) scale(.985);} to{opacity:1; transform:none;} }
+  @keyframes panelOut{ from{opacity:1; transform:none;} to{opacity:0; transform: translateY(6px) scale(.985);} }
+  .anim-in  { animation: panelIn .28s ease forwards; }
+  .anim-out { animation: panelOut .22s ease forwards; }
+  .is-hidden{ display:none !important; }
+
+  @media (max-width:1200px){#tools.tools{grid-template-columns:1fr}}
+  @media (max-width:992px){
+    body.state-filters .wrap{grid-template-columns:1fr}
+    body.state-right .wrap{grid-template-columns:1fr}
+    /* keep right above main when compare-full on mobile too */
+    body.state-right.state-compare-full aside.right{order:0}
+    aside.left, aside.right{order:2} main{order:1}
+  }
+</style>
+</head>
+<body class="state-main">
+
+  <!-- FULLSCREEN AURORA -->
+  <div id="auroraCanvas" class="aurora-bg fullscreen"></div>
+
+  <!-- AI search overlay -->
+  <div id="aiLanding">
+    <div class="logo-chip"><img src="/static/logos/clario.png" alt="Clario" style="height:22px"></div>
+
+    <!-- Typewriter headline (single line) -->
+    <div id="typewriter" class="typewriter">
+      <span class="text"></span><span class="cursor">|</span>
+    </div>
+
+    <div class="sub">e.g. “AI contract automation for in-house teams in Australia”</div>
+
+    <textarea id="aiQuery" rows="3" placeholder="Type your search…"
+      style="width:min(620px,86vw);padding:12px;border-radius:12px;border:1px solid var(--border);font-size:14px;resize:none;background:#0f1220;color:#e9eef7;"></textarea>
+
+    <!-- Only the Search button, centered -->
+    <div class="landing-actions">
+      <button id="aiSearchBtn" class="btn primary">Search</button>
+    </div>
+
+    <div id="aiStatus" class="sub" style="min-height:18px"></div>
+  </div>
+
+  <!-- Top bar -->
+  <header>
+    <div class="topbar">
+      <div class="brand">
+        <img src="/static/logos/clario.png" alt="Clario" class="brand-logo">
+        <h1>Legal-Tech Explorer</h1>
+      </div>
+      <span class="spacer"></span>
+      <button id="filtersBtn" class="btn">Filters</button>
+      <button id="loadBtn" class="btn">Load CSV</button>
+      <input id="fileInput" type="file" accept=".csv" style="display:none" />
+    </div>
+  </header>
+
+  <div class="wrap">
+    <!-- Left: Filters -->
+    <aside class="left">
+      <div class="toolbar">
+        <div class="col-title">Filters</div>
+        <button class="btn" id="closeFilters">Close</button>
+      </div>
+      <div class="box filters">
+        <div class="sub" style="margin-bottom:6px">Quick & minimal facets</div>
+      </div>
+    </aside>
+
+    <!-- Middle: Results -->
+    <main>
+      <div class="toolbar">
+        <div class="col-title">Results</div>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="sub" id="count"></span>
+        </div>
+      </div>
+      <div class="box alt">
+        <div id="tools" class="tools"></div>
+      </div>
+    </main>
+
+    <!-- Right: Details / Compare -->
+    <aside class="right is-hidden" id="rightSidebar">
+      <div class="toolbar" style="gap:8px">
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div class="col-title" id="rightTitle">Panel</div>
+          <div class="tabs">
+            <button id="tabDetails" class="tab active" type="button">Details</button>
+            <button id="tabCompare" class="tab" type="button">Compare <span id="compareCount">(0)</span></button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <button class="btn" id="expandRight">Expand</button>
+          <button class="btn" id="closeRight">Close</button>
+        </div>
+      </div>
+
+      <div class="box" id="rightBody"><div id="details">Select a tool to see full info.</div></div>
+
+      <div class="box is-hidden" id="compareBox">
+        <div class="col-title" style="margin-bottom:8px">Comparison</div>
+        <div id="compareList" class="filter-row" style="display:none"></div>
+        <div style="height:8px"></div>
+        <div class="compare-wrap">
+          <table class="compare" id="compareTable" style="width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px"></table>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <!-- === App logic === -->
+  <script>
+  /* ===== Utilities: panel show/hide animations ===== */
+  function showWithAnim(el){
+    if(!el) return;
+    el.classList.remove('is-hidden','anim-out');
+    void el.offsetWidth;
+    el.classList.add('anim-in');
+    el.addEventListener('animationend', function onEnd(){
+      el.classList.remove('anim-in');
+      el.removeEventListener('animationend', onEnd);
+    });
+  }
+  function hideWithAnim(el, {after} = {}){
+    if(!el || el.classList.contains('is-hidden')) return;
+    el.classList.remove('anim-in');
+    void el.offsetWidth;
+    el.classList.add('anim-out');
+    el.addEventListener('animationend', function onEnd(){
+      el.classList.remove('anim-out');
+      el.classList.add('is-hidden');
+      el.removeEventListener('animationend', onEnd);
+      if(typeof after === 'function') after();
+    });
+  }
+
+  // Polyfill CSS.escape
+  if (typeof CSS === 'undefined' || typeof CSS.escape !== 'function') {
+    (function(){ var cssEscape = function(value){ return String(value).replace(/[^a-zA-Z0-9_\u00A0-\u10FFFF-]/g,'\\\\$&'); };
+      window.CSS = window.CSS || {}; CSS.escape = CSS.escape || cssEscape; })();
+  }
+
+  /* ===== Typewriter (single line, faster) ===== */
+  const TYPE_TEXT = "Describe the legal-tech you’re looking for";
+  const TYPE_SPEED = 55;      // ms per char
+  const DELETE_SPEED = 28;
+  const PAUSE_MS = 900;
+
+  (function typewriter(){
+    const wrap = document.getElementById('typewriter');
+    if(!wrap) return;
+    const textEl = wrap.querySelector('.text');
+    let iChar = 0, deleting = false;
+    function tick(){
+      const line = TYPE_TEXT;
+      if(!deleting){
+        textEl.textContent = line.slice(0, iChar+1);
+        iChar++;
+        if(iChar === line.length){
+          setTimeout(()=>{ deleting = true; tick(); }, PAUSE_MS);
+        } else {
+          setTimeout(tick, TYPE_SPEED);
+        }
+      } else {
+        textEl.textContent = line.slice(0, iChar-1);
+        iChar--;
+        if(iChar === 0){
+          deleting = false;
+          setTimeout(tick, 300);
+        } else {
+          setTimeout(tick, DELETE_SPEED);
+        }
+      }
+    }
+    tick();
+  })();
+
+  /* ===== Schema / Data / Helpers ===== */
+  var SCHEMA = [
+    { key: 'Vendor Name', group: 'Vendor Identification', type: 'text' },
+    { key: 'Vendor Overview', group: 'Vendor Identification', type: 'text' },
+    { key: 'HQ', group: 'Vendor Identification', type: 'single' },
+    { key: 'Office Locations', group: 'Vendor Identification', type: 'text' },
+    { key: 'Regions Served', group: 'Vendor Identification', type: 'multi', values: ['Australia','New Zealand','Asia-Pacific (APAC)','North America (US & Canada)','Europe (UK & EU)','United Kingdom','Middle East','Africa','Latin America','Unknown'] },
+    { key: 'Year Founded', group: 'Vendor Identification', type: 'number-range' },
+
+    { key: 'Product Name', group: 'Product Identification', type: 'text' },
+    { key: 'Product Description', group: 'Product Identification', type: 'text' },
+    { key: 'Languages supported', group: 'Product Identification', type: 'single', values: ['English only','English + Limited Other Languages','Multilingual (supports major global languages)','Unknown / To Verify'] },
+
+    { key: 'Legal Functionality – Main Category', group: 'Legal Functionality & Use Case', type: 'single', values: ['Contracting & Document Automation','Matter, Workflow & Intake Management','Legal Operations & Analytics','Outside Counsel & Spend Management','Compliance, Risk & Governance','Corporate Governance & Entity Management','Litigation, Disputes & Investigations','Intellectual Property, Technology & Data','Employment & HR Legal Support','Cross-Border, Transactions & Deal Management','Knowledge, Search & Precedent Management','AI Legal Assistants & Productivity Tools','Business Partnering & Self-Service Tools','Integration & Platform Infrastructure','Legal Research & Insights.'] },
+    { key: 'Legal Functionality – Sub-Category', group: 'Legal Functionality & Use Case', type: 'single' },
+    { key: 'Main Problem Solved', group: 'Legal Functionality & Use Case', type: 'text' },
+
+    { key: 'Primary User Segment', group: 'Audience, Fit & Accessibility', type: 'multi', values: ['Corporate legal','Private practice','Alternative Legal Service Providers (ALSPs)','Legal Operations Professionals','Contract Management Teams / Procurement','Compliance & Risk Teams','Litigation / Disputes Teams','Intellectual Property Teams.'] },
+    { key: 'Industry Focus', group: 'Audience, Fit & Accessibility', type: 'single', values: ['Corporate','Government / Public Sector','Financial Services','Healthcare / Life Sciences','Education / Research','Energy / Resources','Professional Services','Other / Not Specified'] },
+
+    { key: 'AI Maturity Stage', group: 'AI Capabilities & Innovation', type: 'single', values: ['Experimental / early stage','Quick win','Advanced','Enterprise-grade'] },
+    { key: 'AI Powered', group: 'AI Capabilities & Innovation', type: 'single', values: ['Yes','No'] },
+    { key: 'AI Platform', group: 'AI Capabilities & Innovation', type: 'multi', values: ['Large Language Model (LLM) Platforms','Predictive / Machine Learning (ML) Platforms','Natural Language Processing (NLP) / Text Analytics','Computer Vision & Document Recognition','Recommendation & Decision Support Systems','Conversational / Copilot Layer','AI Integration / Orchestration Layer','Domain-Specific or Proprietary AI Engines.'] },
+    { key: 'Deployment Model', group: 'AI Capabilities & Innovation', type: 'single', values: ['Cloud (SaaS)','Private Cloud','On-Premises','Hybrid','Desktop / Local Application.'] },
+    { key: 'Hosting Location / Data Residence', group: 'AI Capabilities & Innovation', type: 'single', values: ['Australia','Asia-Pacific (ex-AU)','United States','Europe / UK','Multi-Region / Distributed Cloud','Customer-Hosted / Private Cloud','Unknown / To Verify'] },
+    { key: 'Hosting Provider', group: 'AI Capabilities & Innovation', type: 'single', values: ['AWS','Azure','Google Cloud','Other'] },
+
+    { key: 'ISO Certifications', group: 'Security, Privacy & Trust', type: 'multi', values: ['ISO 27001','ISO 27017','ISO 27018','ISO 27701','ISO 22301','ISO 9001','ISO 20000'] },
+    { key: 'Security & Compliance Certifications', group: 'Security, Privacy & Trust', type: 'multi', values: ['SOC 1 (Type I or II)','SOC 2 (Type I or II)','SOC 3','GDPR Compliance (EU)','CCPA Compliance (US)','HIPAA Compliance (US)','FedRAMP, Authorization (US)','IRAP Assessment (AU)','CSA STAR Certification','Cyber Essentials / Plus (UK).'] },
+
+    { key: 'Pricing Model', group: 'Commercials & Procurement', type: 'single', values: ['Subscription (SaaS)','Usage-Based / Consumption','Per Seat / License','Tiered / Plan-Based','Enterprise Custom Quote','Freemium / Free Trial','One-Time Purchase / Perpetual License.'] },
+    { key: 'Approx. Price Range (AUD)', group: 'Commercials & Procurement', type: 'single', values: ['<$10K','$10K–$50K','$51K-$100K','$101K+'] },
+    { key: 'Demo / Proof of Concept Available', group: 'Commercials & Procurement', type: 'single', values: ['Yes','No','Unknown'] },
+    { key: 'Adoption Level', group: 'Commercials & Procurement', type: 'single', values: ['Emerging / New Entrant','Growing Adoption','Mainstream / Proven','Market Leader / Standard','Unknown / To Verify'] },
+    { key: 'Ease of Purchase', group: 'Commercials & Procurement', type: 'single', values: ['Very Easy','Easy','Moderate','Complex'] },
+
+    { key: 'Customer Reviews', group: 'Customer Reviews', type: 'text' },
+    { key: 'Customer Feedback Rating', group: 'Customer Reviews', type: 'number-range' },
+
+    { key: 'Vendor Contact Details', group: 'Vendor Identification', type: 'text' },
+    { key: 'Vendor Website', group: 'Vendor Identification', type: 'text' }
+  ];
+
+  var DATA = [{
+    "__id":"actionstep-actionstep-https-www-actionstep-com-0",
+    "__display_name":"Actionstep — Actionstep",
+    "Vendor Name":"Actionstep",
+    "Vendor Overview":"Actionstep is a modern, adaptable law firm management platform designed to streamline legal operations and improve client service.",
+    "HQ":"New Zealand",
+    "Regions Served":"Asia-Pacific (APAC); North America (US & Canada); Europe (UK & EU); Latin America",
+    "Year Founded":"2004",
+    "Product Name":"Actionstep",
+    "Product Description":"Comprehensive practice management with workflows, matter management, document automation, and billing.",
+    "Languages supported":"English only",
+    "Legal Functionality – Main Category":"Matter, Workflow & Intake Management",
+    "Legal Functionality – Sub-Category":"Workflow Automation",
+    "Primary User Segment":"Corporate legal; Legal Operations Professionals",
+    "AI Maturity Stage":"Enterprise-grade",
+    "AI Powered":"Yes",
+    "AI Platform":"Large Language Model (LLM) Platforms; AI Integration / Orchestration Layer",
+    "Deployment Model":"Cloud (SaaS)",
+    "Hosting Location / Data Residence":"Multi-Region / Distributed Cloud",
+    "Hosting Provider":"AWS",
+    "ISO Certifications":"ISO 27001",
+    "Security & Compliance Certifications":"SOC 2 (Type I or II); GDPR Compliance (EU)",
+    "Pricing Model":"Subscription (SaaS)",
+    "Approx. Price Range (AUD)":"$10K–$50K",
+    "Demo / Proof of Concept Available":"Yes",
+    "Adoption Level":"Mainstream / Proven",
+    "Ease of Purchase":"Moderate",
+    "Customer Reviews":"Well regarded by midsize firms",
+    "Customer Feedback Rating":"4.3",
+    "Vendor Contact Details":"https://www.actionstep.com/contact/",
+    "Vendor Website":"https://www.actionstep.com/"
+  }];
+
+  function esc(s){ return (s||'').toString().replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+  function splitMulti(v){ if(!v) return []; return String(v).split(/[;,|\/\n]+/).map(x=>x.trim()).filter(Boolean); }
+  function vendorSlug(name){ return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  function vendorNoSpace(name){ return String(name||'').replace(/\s+/g,''); }
+  function logoCandidates(name){ var a=[], raw=vendorNoSpace(name), slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(ext=>{ a.push('/static/logos/'+raw+'.'+ext); a.push('/static/logos/'+slug+'.'+ext); }); return a; }
+  function makeLogoEl(name){
+    var img=document.createElement('img'); img.className='logo';
+    var tries=logoCandidates(name); if(!tries.length){ return initialsBadge(name); }
+    img.dataset.tries=JSON.stringify(tries); img.dataset.try='0'; img.alt=name+' logo'; img.src=tries[0];
+    img.onerror=function(){ var idx=+img.dataset.try+1, arr=JSON.parse(img.dataset.tries); if(idx<arr.length){ img.dataset.try=String(idx); img.src=arr[idx]; } else { var badge=initialsBadge(name); img.replaceWith(badge); } };
+    return img;
+  }
+  function initialsBadge(name){ var d=document.createElement('div'); d.className='logo-badge'; var t=(name||'').trim(); var parts=t.split(/\s+/); var ini=''; if(parts.length>1){ ini=parts[0][0]+parts[parts.length-1][0]; } else { ini=t.slice(0,2); } d.textContent=ini.toUpperCase(); return d; }
+
+  var filtersBox = document.querySelector('.filters');
+  var toolsEl = document.getElementById('tools');
+  var detailsEl = document.getElementById('details');
+  var countEl = document.getElementById('count');
+  var rightTitle = document.getElementById('rightTitle');
+  var rightBody = document.getElementById('rightBody');
+  var compareBox = document.getElementById('compareBox');
+  var rightSidebar = document.getElementById('rightSidebar');
+
+  var CONTROLS = new Map();
+  var RIGHT_MODE = null;
+  var compare = [];
+  var SELECTED_ID = null;
+  var __filtersListenerAttached = false;
+
+  var HAS_SEARCHED = false; // hide list until first search/CSV
+
+  var ALLOWED_FILTER_KEYS = [
+    'Regions Served','Legal Functionality – Main Category','Primary User Segment',
+    'AI Maturity Stage','Ease of Purchase','Adoption Level','Deployment Model','Pricing Model'
+  ];
+
+  function buildFilters(){
+    CONTROLS = new Map();
+    filtersBox.innerHTML = '<div class="sub" style="margin-bottom:6px">Quick & minimal facets</div>';
+
+    var quick=document.createElement('div');
+    quick.className='filter-field';
+    quick.innerHTML='<label>Quick Search</label><input id="q" type="search" placeholder="Search tool, vendor, description…">';
+    filtersBox.appendChild(quick);
+    window.q=document.getElementById('q');
+
+    function groupContainer(title){
+      var d=document.createElement('details'); d.className='group'; d.open=true;
+      d.innerHTML='<summary>'+esc(title)+'</summary>';
+      filtersBox.appendChild(d); return d;
+    }
+    function uniqueValues(key){
+      var cfg=SCHEMA.find(s=>s.key===key);
+      if(cfg && cfg.values) return cfg.values;
+      var vals={};
+      DATA.forEach(function(r){
+        var arr=splitMulti(r[key]);
+        if(arr.length){ arr.forEach(v=>vals[v]=1); }
+        else if(r[key]){ vals[String(r[key])]=1; }
+      });
+      return Object.keys(vals).sort();
+    }
+    function addSingleSelect(parent, key, options){
+      var wrap=document.createElement('div'); wrap.className='filter-field';
+      var html='<label>'+esc(key)+'</label><select data-key="'+esc(key)+'"><option value="">Any</option>';
+      options.forEach(v=>{ html+='<option>'+esc(v)+'</option>'; });
+      html+='</select>'; wrap.innerHTML=html; parent.appendChild(wrap);
+      var sel=wrap.querySelector('select');
+      CONTROLS.set(key,{ type:'single', get:function(){ return sel.value; }, _el: sel });
+    }
+    function addMultiChips(parent, key, options){
+      var wrap=document.createElement('div'); wrap.className='filter-field';
+      wrap.innerHTML='<label>'+esc(key)+'</label><div class="filter-row" data-key="'+esc(key)+'"></div>';
+      parent.appendChild(wrap);
+      var row=wrap.querySelector('.filter-row');
+      options.forEach(function(v){
+        var lab=document.createElement('label'); lab.className='chip';
+        lab.innerHTML='<input type="checkbox" value="'+esc(v)+'"> <span>'+esc(v)+'</span>';
+        row.appendChild(lab);
+      });
+      var holder=document.createElement('div'); holder.style.display='none'; holder.setAttribute('data-key', key);
+      options.forEach(function(v){ var l=document.createElement('label'); l.innerHTML='<input type="checkbox" value="'+esc(v)+'">'; holder.appendChild(l); });
+      document.body.appendChild(holder);
+      CONTROLS.set(key,{ type:'multi', get:function(){ return Array.prototype.map.call(row.querySelectorAll('input:checked'), c=>c.value); }, _el: holder, _row: row });
+    }
+
+    var sec=groupContainer('Filters');
+
+    ALLOWED_FILTER_KEYS.forEach(function(key){
+      var cfg=SCHEMA.find(s=>s.key===key); if(!cfg) return;
+      var opts=uniqueValues(key);
+      if(cfg.type==='single') addSingleSelect(sec,key,opts);
+      else if(cfg.type==='multi') addMultiChips(sec,key,opts);
+    });
+
+    var hiddenKeys = SCHEMA.map(s=>s.key).filter(k => ALLOWED_FILTER_KEYS.indexOf(k)===-1);
+    hiddenKeys.forEach(function(key){
+      var cfg=SCHEMA.find(s=>s.key===key); if(!cfg) return;
+      if(cfg.type==='single'){
+        var sel=document.createElement('select'); sel.setAttribute('data-key', key); sel.style.display='none';
+        var values = uniqueValues(key);
+        sel.innerHTML = '<option value=""></option>' + values.map(v=>'<option>'+esc(v)+'</option>').join('');
+        document.body.appendChild(sel);
+        CONTROLS.set(key,{ type:'single', get:function(){ return sel.value; }, _el: sel });
+      } else if(cfg.type==='multi'){
+        var holder=document.createElement('div'); holder.style.display='none'; holder.setAttribute('data-key', key);
+        var values = uniqueValues(key);
+        holder.innerHTML = values.map(v=>'<label><input type="checkbox" value="'+esc(v)+'"></label>').join('');
+        document.body.appendChild(holder);
+        CONTROLS.set(key,{ type:'multi', get:function(){ return Array.prototype.map.call(holder.querySelectorAll('input:checked'), c=>c.value); }, _el: holder });
+      } else {
+        var inp=document.createElement('input'); inp.type='text'; inp.style.display='none'; inp.setAttribute('data-key', key);
+        document.body.appendChild(inp);
+        CONTROLS.set(key,{ type:'single', get:function(){ return inp.value; }, _el: inp });
+      }
+    });
+
+    var optRow=document.createElement('div'); optRow.className='filter-field';
+    optRow.innerHTML='<label>Options</label><label style="font-size:12px;color:#9aa3b8"><input id="dedupeVendor" type="checkbox" checked> Deduplicate identical rows</label>';
+    filtersBox.appendChild(optRow);
+
+    if (!__filtersListenerAttached) {
+      filtersBox.addEventListener('input', applyFilters);
+      __filtersListenerAttached = true;
+    }
+  }
+
+  function quickBlob(rec){
+    return (rec.__display_name+' '+(rec['Vendor Name']||'')+' '+(rec['Product Name']||'')+' '+(rec['Product Description']||'')+' '+(rec['Vendor Overview']||''));
+  }
+  function multiMatch(recVal, selected){
+    if(!selected || !selected.length) return true;
+    var hay=splitMulti(recVal);
+    var set={}; hay.forEach(v=>set[v]=1);
+    for(var i=0;i<selected.length;i++){ if(set[selected[i]]) return true; }
+    return false;
+  }
+  function matchRecord(rec){
+    var t=(window.q && q.value.trim().toLowerCase())||'';
+    if(t){ if(quickBlob(rec).toLowerCase().indexOf(t)===-1) return false; }
+
+    for (const [key, ctl] of CONTROLS.entries()){
+      var val = ctl.get && ctl.get();
+      if(!val || (Array.isArray(val) && !val.length)) continue;
+
+      var schema = SCHEMA.find(s=>s.key===key);
+      if(schema && schema.type==='multi'){
+        if(!multiMatch(rec[key], Array.isArray(val)?val:[val])) return false;
+      } else if(schema && schema.type==='number-range'){
+        if(String(rec[key]||'') !== String(val)) return false;
+      } else {
+        if(String(rec[key]||'') !== String(val)) return false;
+      }
+    }
+    return true;
+  }
+  function keyByVendorTool(rows){
+    var seen={}, out=[]; rows.forEach(function(r){
+      var k=(r['Vendor Name']||'')+'|'+(r['Product Name']||'')+'|'+(r['Vendor Website']||'');
+      if(!seen[k]){ seen[k]=1; out.push(r); }
+    });
+    return out;
+  }
+
+  /* spotlight tracking */
+  function attachSpotlight(card){
+    let raf = null, px = 0, py = 0;
+    card.addEventListener('mousemove', (e)=>{
+      const rect = card.getBoundingClientRect();
+      px = e.clientX - rect.left;
+      py = e.clientY - rect.top;
+      if(raf) return;
+      raf = requestAnimationFrame(()=>{
+        card.style.setProperty('--mouse-x', px + 'px');
+        card.style.setProperty('--mouse-y', py + 'px');
+        raf = null;
+      });
+    });
+  }
+
+  function renderList(rows){
+    const container = toolsEl;
+    if(!HAS_SEARCHED){
+      countEl.textContent = '0 tools';
+      container.innerHTML = '';
+      return;
+    }
+
+    countEl.textContent = rows.length + ' tools';
+    container.innerHTML = '';
+
+    const frag = document.createDocumentFragment();
+
+    rows.slice(0,200).forEach(function(rec){
+      var url = rec['Vendor Website'] || '';
+      var chosen = compare.indexOf(rec.__id)!==-1;
+      var cats = splitMulti(rec['Legal Functionality – Main Category']).concat(splitMulti(rec['Legal Functionality – Sub-Category']));
+      var chips = cats.map(c=>'<span class="chip" style="padding:2px 8px;font-size:11px">'+esc(c)+'</span>').join(' ');
+
+      var card = document.createElement('div'); card.className='tool reveal-child'; card.dataset.id = rec.__id;
+
+      var head = document.createElement('div'); head.className='tool-head';
+      head.appendChild(makeLogoEl(rec['Vendor Name']||rec['Vendor']||''));
+      var titleWrap = document.createElement('div');
+      titleWrap.innerHTML = '<div class="title">'+esc(rec.__display_name||rec['Product Name']||rec['Vendor Name']||'Unnamed')+'</div>'+
+                            '<div class="meta">'+esc(rec['Vendor Name']||'')+' • <span>'+esc(rec['HQ']||'')+'</span> '+(url?('• <a href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>'):'')+'</div>';
+      head.appendChild(titleWrap);
+
+      var desc = document.createElement('div'); desc.className='desc'; desc.textContent = rec['Product Description']||'';
+      var chipRow = document.createElement('div'); chipRow.className='filter-row'; chipRow.innerHTML = chips;
+
+      var act = document.createElement('div'); act.className='actions';
+      var detailsBtn = document.createElement('button'); detailsBtn.className='btn btn-details'; detailsBtn.textContent='Details';
+      var cmpBtn = document.createElement('button'); cmpBtn.className='btn btn-compare'; cmpBtn.textContent = chosen? 'Remove from compare':'Add to compare';
+      act.appendChild(detailsBtn); act.appendChild(cmpBtn);
+
+      card.appendChild(head); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
+      frag.appendChild(card);
+
+      attachSpotlight(card);
+    });
+
+    container.appendChild(frag);
+
+    // stagger reveal
+    Array.from(container.children).forEach((el,i)=>{
+      setTimeout(()=>{ el.classList.add('revealed'); }, 40*i);
+    });
+
+    Array.prototype.forEach.call(container.querySelectorAll('.btn-details'), function(btn){
+      btn.addEventListener('click', function(e){
+        var id=e.target.closest('.tool').dataset.id;
+        var rec=DATA.find(function(r){return r.__id===id;});
+        SELECTED_ID = id;
+        renderDetails(rec);
+        switchTab('details');
+        if(!document.body.classList.contains('state-right-wide')){
+          document.body.classList.add('state-right-wide');
+          document.getElementById('expandRight').textContent='Collapse';
+        }
+        updateDimming();
+      });
+    });
+    Array.prototype.forEach.call(container.querySelectorAll('.btn-compare'), function(btn){
+      btn.addEventListener('click', function(e){
+        var id=e.target.closest('.tool').dataset.id;
+        toggleCompare(id);
+        applyFilters();
+        switchTab('compare');
+        renderCompare();
+        updateDimming();
+      });
+    });
+  }
+
+  function renderDetails(rec){
+    var details = document.getElementById('details');
+    if(!rec){ details.textContent='No record'; return; }
+    rightTitle.textContent = 'Details';
+
+    hideWithAnim(compareBox);
+    showWithAnim(rightBody);
+
+    var top=document.createElement('div'); top.style.display='flex'; top.style.gap='10px'; top.style.alignItems='center'; top.style.marginBottom='8px';
+    top.appendChild(makeLogoEl(rec['Vendor Name']||''));
+    var name=document.createElement('div'); name.innerHTML='<div class="title">'+esc(rec.__display_name||'')+'</div>';
+    top.appendChild(name);
+
+    var rows='';
+    Object.keys(rec).forEach(function(k){
+      if(/^_/.test(k) || /^__/.test(k)) return;
+      var v=rec[k]; if(v==null || v==='') return;
+      var val=esc(v); if(/^https?:\/\//i.test(String(v))) val='<a href="'+v+'" target="_blank" rel="noopener">'+esc(v)+'</a>';
+      rows+='<tr><th style="text-align:left;padding:6px 10px;background:#0f1220;border:1px solid var(--border)">'+esc(k)+'</th><td style="padding:6px 10px;background:#0f1220;border:1px solid var(--border)">'+val+'</td></tr>';
+    });
+    details.innerHTML=''; details.appendChild(top);
+    var tbl=document.createElement('table'); tbl.style.width='100%'; tbl.style.borderCollapse='separate'; tbl.style.borderSpacing='0 8px'; tbl.innerHTML=rows; details.appendChild(tbl);
+  }
+
+  function smallHeaderLogoEl(name){
+    const el = makeLogoEl(name);
+    if(el.tagName === 'IMG'){ el.classList.remove('logo'); el.classList.add('head-logo'); return el; }
+    else { el.classList.remove('logo-badge'); el.classList.add('head-badge'); return el; }
+  }
+
+  function renderCompare(){
+    RIGHT_MODE='compare';
+    rightTitle.textContent='Comparison';
+
+    hideWithAnim(rightBody);
+    showWithAnim(compareBox);
+
+    const tbl=document.getElementById('compareTable');
+    const chosen = compare.slice();
+    const selectedRecords = chosen.map(id => DATA.find(r=>r.__id===id)).filter(Boolean);
+
+    if(!selectedRecords.length){
+      tbl.innerHTML='<thead></thead><tbody><tr><td style="color:#9aa3b8">Nothing selected</td></tr></tbody>';
+      updateCompareCount();
+      return;
+    }
+
+    // THEAD
+    const thead = document.createElement('thead');
+    const thr = document.createElement('tr');
+
+    const fieldTh = document.createElement('th');
+    fieldTh.innerHTML = 'Field';
+    fieldTh.style.textAlign='left'; fieldTh.style.padding='6px 10px'; fieldTh.style.background='#0f1220'; fieldTh.style.border='1px solid var(--border)';
+    thr.appendChild(fieldTh);
+
+    selectedRecords.forEach(rec=>{
+      const th = document.createElement('th');
+      th.style.textAlign='left'; th.style.padding='6px 10px'; th.style.background='#0f1220'; th.style.border='1px solid var(--border)';
+      const wrap = document.createElement('div'); wrap.className='head-cell';
+      wrap.appendChild(smallHeaderLogoEl(rec['Vendor Name']||''));
+      const label = document.createElement('span'); label.textContent = rec.__display_name || '';
+      wrap.appendChild(label);
+      th.appendChild(wrap);
+      thr.appendChild(th);
+    });
+    thead.appendChild(thr);
+
+    // TBODY
+    const tbody = document.createElement('tbody');
+    const cols=SCHEMA.map(s=>s.key);
+
+    cols.forEach(col=>{
+      const tr = document.createElement('tr');
+      const th = document.createElement('th'); th.style.textAlign='left'; th.style.padding='6px 10px'; th.style.background='#0f1220'; th.style.border='1px solid var(--border)'; th.textContent = col;
+      tr.appendChild(th);
+
+      selectedRecords.forEach(rec=>{
+        let val = rec[col] || '';
+        const td = document.createElement('td'); td.style.padding='6px 10px'; td.style.background='#0f1220'; td.style.border='1px solid var(--border)';
+        if(/^https?:\/\//i.test(String(val))){
+          td.innerHTML = '<a href="'+esc(String(val))+'" target="_blank" rel="noopener">Open ↗</a>';
+        } else {
+          td.textContent = String(val);
+        }
+        tr.appendChild(td);
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    tbl.innerHTML=''; tbl.appendChild(thead); tbl.appendChild(tbody);
+    updateCompareCount();
+  }
+
+  function toggleCompare(id){
+    var i=compare.indexOf(id);
+    if(i===-1){ if(compare.length>=5) return; compare.push(id); }
+    else compare.splice(i,1);
+    if(RIGHT_MODE==='compare'){ renderCompare(); } else { updateCompareCount(); }
+  }
+
+  function updateCompareCount(){
+    var el=document.getElementById('compareCount');
+    if(el){ el.textContent='(' + compare.length + ')'; }
+  }
+
+  function updateDimming(){
+    Array.from(document.querySelectorAll('#tools .tool')).forEach(c=>{
+      c.classList.remove('dimmed','highlight');
+      c.style.opacity='1'; c.style.filter='none';
+    });
+  }
+
+  function applyFilters(){
+    var rows=DATA.filter(matchRecord);
+    var dedupe=document.getElementById('dedupeVendor');
+    if(dedupe && dedupe.checked) rows=keyByVendorTool(rows);
+    renderList(rows);
+    if(RIGHT_MODE==='compare'){ renderCompare(); }
+    updateCompareCount();
+    updateDimming();
+  }
+
+  function normalizeRows(rows){
+    if(!rows.length) return [];
+    var out=[]; rows.forEach(function(r,i){
+      var vendor=r['Vendor Name']||r['Vendor']||r['Company']||'';
+      var tool  =r['Product Name']||r['Tool']||r['Product']||'';
+      var url   =r['Vendor Website']||r['Website']||r['URL']||'';
+      var id=(vendor||'')+'|'+(tool||'')+'|'+(url||'')+'|'+i;
+      var display = tool ? (String(vendor).toLowerCase().indexOf(String(tool).toLowerCase())>-1 ? String(tool) : (tool+' — '+(vendor||''))) : (vendor||'Unnamed Tool');
+      var rec=Object.assign({}, r, { __id:id, __display_name:display });
+      out.push(rec);
+    });
+    var uniq={}; var dedup=[];
+    out.forEach(function(r){ var k=JSON.stringify(r); if(!uniq[k]){ uniq[k]=1; dedup.push(r);} });
+    return dedup;
+  }
+
+  function loadCSVFromText(text){
+    var parsed=Papa.parse(text,{ header:true, skipEmptyLines:true });
+    if(parsed.errors && parsed.errors.length){ alert('CSV parse error: '+parsed.errors[0].message); }
+    DATA=normalizeRows(parsed.data);
+    HAS_SEARCHED = true;              // show list after CSV import
+    document.getElementById('aiLanding').style.display="none";
+    buildFilters();
+    applyFilters();
+  }
+
+  /* ===== AUTO-IMPORT CSV ON LAUNCH ===== */
+  const AUTO_CSV_URL = '/static/data/top_50_3.csv'; // CSV served via FastAPI static mount
+
+  async function loadCSVFromURL(url){
+    try{
+      const res = await fetch(url, { cache: 'no-store' });
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+
+      // keep overlay UX by default (preload silently):
+      const parsed = Papa.parse(text,{ header:true, skipEmptyLines:true });
+      if(parsed.errors?.length){ console.warn('CSV parse warnings:', parsed.errors.slice(0,3)); }
+      DATA = normalizeRows(parsed.data);
+      buildFilters();
+
+      // If you want to skip overlay and show results instantly, uncomment:
+      // HAS_SEARCHED = true;
+      // document.getElementById('aiLanding').style.display = "none";
+      // applyFilters();
+    }catch(err){
+      console.error('Auto CSV load failed:', err);
+    }
+  }
+
+  // Layout helpers with animations
+  function ensureRightVisible(){
+    if(rightSidebar.classList.contains('is-hidden')){
+      document.body.classList.add('state-right');
+      showWithAnim(rightSidebar);
+    } else {
+      document.body.classList.add('state-right');
+    }
+  }
+
+  function openFilters(){
+    document.body.classList.remove('state-main','state-right');
+    document.body.classList.add('state-filters');
+  }
+  function closeFilters(){
+    document.body.classList.remove('state-filters');
+    if(RIGHT_MODE) document.body.classList.add('state-right'); else document.body.classList.add('state-main');
+  }
+
+  function openRight(mode){
+    RIGHT_MODE=mode;
+    ensureRightVisible();
+    document.body.classList.remove('state-main','state-filters');
+    document.body.classList.add('state-right');
+    document.body.classList.toggle('mode-compare', mode==='compare');
+    document.body.classList.toggle('mode-details', mode==='details');
+
+    if(mode==='compare'){
+      document.body.classList.remove('state-right-wide','state-compare-full');
+      renderCompare();
+      document.getElementById('expandRight').textContent='Expand';
+    } else {
+      document.body.classList.remove('state-compare-full');
+      rightTitle.textContent='Details';
+      showWithAnim(rightBody);
+      hideWithAnim(compareBox);
+    }
+  }
+  function closeRight(){
+    RIGHT_MODE=null; SELECTED_ID=null;
+    hideWithAnim(rightSidebar, { after: ()=>{
+      document.body.classList.remove('state-right','state-right-wide','state-compare-full','mode-compare','mode-details');
+      document.getElementById('expandRight').textContent='Expand';
+      if(!document.body.classList.contains('state-filters')){ document.body.classList.add('state-main'); }
+      updateDimming();
+    }});
+  }
+  function switchTab(mode){
+    const tDetails=document.getElementById('tabDetails');
+    const tCompare=document.getElementById('tabCompare');
+    tDetails.classList.toggle('active', mode==='details');
+    tCompare.classList.toggle('active', mode==='compare');
+
+    ensureRightVisible();
+
+    if(mode==='details'){
+      rightTitle.textContent='Details';
+      hideWithAnim(compareBox);
+      showWithAnim(rightBody);
+    } else {
+      rightTitle.textContent='Comparison';
+      hideWithAnim(rightBody);
+      showWithAnim(compareBox);
+    }
+    openRight(mode);
+
+    // gentle stagger
+    const panel = document.querySelector('aside.right');
+    const kids = panel ? panel.querySelectorAll('.box, .toolbar') : [];
+    kids.forEach((el,i)=>{
+      el.classList.add('reveal-child');
+      setTimeout(()=>el.classList.add('revealed'), 50*i);
+    });
+    updateDimming();
+  }
+
+  // Header buttons
+  document.getElementById('filtersBtn').onclick=openFilters;
+  document.getElementById('closeFilters').onclick=closeFilters;
+  document.getElementById('closeRight').onclick=closeRight;
+
+  document.getElementById('loadBtn').onclick=function(){ document.getElementById('fileInput').click(); };
+  document.getElementById('fileInput').addEventListener('change', function(e){
+    var f=e.target.files && e.target.files[0]; if(!f) return;
+    var r=new FileReader(); r.onload=function(){ loadCSVFromText(r.result); }; r.readAsText(f);
+  });
+
+  document.getElementById('tabDetails').addEventListener('click', ()=>switchTab('details'));
+  document.getElementById('tabCompare').addEventListener('click', ()=>switchTab('compare'));
+
+  // Expand: Details → wide; Compare → FULL width (and ordered above list)
+  document.getElementById('expandRight').addEventListener('click', ()=>{
+    const btn = document.getElementById('expandRight');
+    ensureRightVisible();
+
+    if(RIGHT_MODE === 'compare'){
+      const full = document.body.classList.toggle('state-compare-full');
+      btn.textContent = full ? 'Collapse' : 'Expand';
+    } else {
+      const wide = document.body.classList.toggle('state-right-wide');
+      btn.textContent = wide ? 'Collapse' : 'Expand';
+    }
+
+    const panel = document.querySelector('aside.right');
+    const kids = panel ? panel.querySelectorAll('.box, .toolbar') : [];
+    kids.forEach((el,i)=>{
+      el.classList.add('reveal-child');
+      setTimeout(()=>el.classList.add('revealed'), 50*i);
+    });
+  });
+
+  // AI integration
+  const aiBtn=document.getElementById('aiSearchBtn');
+  const aiQuery=document.getElementById('aiQuery');
+  const aiStatus=document.getElementById('aiStatus');
+
+  async function runAISearch(){
+    const q = aiQuery.value.trim();
+    if(!q){ aiStatus.textContent="Please type what you need."; return; }
+    aiStatus.textContent="Thinking…";
+    try{
+      const res = await fetch("/query", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ query:q })
+      });
+      if(!res.ok){
+        const text = await res.text().catch(()=>"<no body>");
+        console.error("AI /query error", res.status, text);
+        aiStatus.textContent = `Server error ${res.status}: ${text}`;
+        return;
+      }
+      const filters = await res.json();
+      if(!CONTROLS || CONTROLS.size===0){ buildFilters(); }
+      for(const [key,val] of Object.entries(filters)){ setFilterValue(key,val); }
+      aiStatus.textContent="Applying…";
+      HAS_SEARCHED = true;
+      document.getElementById('aiLanding').style.display="none";
+      applyFilters();
+    }catch(err){
+      console.error("Network/Fetch failed:", err);
+      aiStatus.textContent = `Couldn’t reach the AI server: ${err?.message||err}`;
+    }
+  }
+
+  function setFilterValue(key, value){
+    const ctl = CONTROLS.get(key);
+    if(!ctl || value==null || value==="") return;
+
+    if(ctl.type === 'single'){
+      const sel = document.querySelector(`select[data-key="${CSS.escape(key)}"]`) || ctl._el;
+      if(!sel) return;
+      if(sel.tagName === 'SELECT'){
+        let picked=false;
+        const want=String(value).trim().toLowerCase();
+        for(const opt of sel.options){
+          if(opt.text.trim().toLowerCase()===want){ sel.value=opt.text; picked=true; break; }
+        }
+        if(!picked){ sel.value=''; }
+      } else if(sel.tagName === 'INPUT'){
+        sel.value = String(value);
+      }
+    } else if(ctl.type === 'multi'){
+      const holder = ctl._el;
+      const row    = ctl._row;
+      const want = Array.isArray(value) ? value : [value];
+      const needles = want.map(w => String(w).trim().toLowerCase());
+
+      if(holder){
+        holder.querySelectorAll('input[type="checkbox"]').forEach(c=>{
+          if(needles.includes(c.value.trim().toLowerCase())) c.checked = true;
+        });
+      }
+      if(row){
+        row.querySelectorAll('input[type="checkbox"]').forEach(c=>{
+          if(needles.includes(c.value.trim().toLowerCase())) c.checked = true;
+        });
+      }
+    }
+  }
+
+  aiBtn?.addEventListener('click', runAISearch);
+  aiQuery?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); runAISearch(); }});
+
+  // Init
+  buildFilters();
+  applyFilters();
+  loadCSVFromURL(AUTO_CSV_URL);  // preload database silently
+  </script>
+
+  <!-- AURORA SHADER -->
+  <script type="module">
+    import * as OGL from "https://esm.sh/ogl@1.0.11";
+    const { Renderer, Program, Mesh, Geometry, Color } = OGL;
+
+    function mountAurora(){
+      const host = document.getElementById('auroraCanvas');
+      if(!host){ return; }
+
+      let renderer;
+      try{
+        renderer = new Renderer({ alpha:true, premultipliedAlpha:true, antialias:true, dpr: devicePixelRatio || 1 });
+      }catch(e){
+        console.warn("[Aurora] Renderer init failed, applying CSS fallback:", e);
+        host.classList.add("css-fallback");
+        return;
+      }
+
+      const gl = renderer.gl;
+      if(!gl){ host.classList.add("css-fallback"); return; }
+
+      const isWebGL2 = (gl instanceof WebGL2RenderingContext);
+
+      const VERT = isWebGL2 ? `#version 300 es
+        in vec2 position; void main(){ gl_Position = vec4(position, 0.0, 1.0); }`
+      : `attribute vec2 position; void main(){ gl_Position = vec4(position, 0.0, 1.0); }`;
+
+      const FRAG = isWebGL2 ? `#version 300 es
+precision highp float;
+uniform float uTime, uAmplitude, uBlend; uniform vec3  uColorStops[3]; uniform vec2  uResolution;
+out vec4 fragColor;
+float rand(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+float noise(vec2 p){
+  vec2 i = floor(p), f = fract(p);
+  float a = rand(i); float b = rand(i + vec2(1.0, 0.0));
+  float c = rand(i + vec2(0.0, 1.0)); float d = rand(i + vec2(1.0, 1.0));
+  vec2 u = f*f*(3.0-2.0*f);
+  return mix(a, b, u.x) + (c - a)*u.y*(1.0 - u.x) + (d - b)*u.x*u.y;
+}
+float fbm(vec2 p){
+  float v = 0.0; float a = 0.5;
+  for(int i=0;i<5;i++){ v += a * noise(p); p *= 2.0; a *= 0.5; }
+  return v;
+}
+void main(){
+  vec2 res = uResolution;
+  vec2 uv  = gl_FragCoord.xy / res;
+  vec2 p   = uv * 2.0 - 1.0;
+
+  float diag = smoothstep(-0.8, 0.6, p.x + p.y);
+
+  float tl = 1.0 - length(uv - vec2(0.03, 0.02)) * 1.2;
+  float tr = 1.0 - length(uv - vec2(0.97, 0.02)) * 1.2;
+  tl = smoothstep(0.0, 0.9, tl);
+  tr = smoothstep(0.0, 0.9, tr);
+
+  float t   = uTime * 0.18;
+  float band = fbm(vec2(uv.x * 2.0 + t*0.8, uv.y * 1.2 - t)) * 0.7;
+  float sheet = smoothstep(0.35, 0.35 + uBlend * 0.45, band + (0.25 * uAmplitude));
+
+  float rampX = smoothstep(0.0, 1.0, uv.x);
+  vec3 rampColor = mix(uColorStops[0], uColorStops[2], rampX);
+
+  vec3 leftGlow  = uColorStops[0] * tl;
+  vec3 rightGlow = uColorStops[2] * tr;
+
+  vec3 base = vec3(0.04, 0.04, 0.07);
+  vec3 diagTint = rampColor * (0.08 + 0.22 * diag);
+
+  vec3 aurora = (leftGlow + rightGlow) * 1.25;
+  aurora += rampColor * sheet * 1.35;
+
+  float vign = smoothstep(1.35, 0.65, length(p));
+  vec3 color = base + diagTint + aurora;
+  color *= mix(0.95, 1.02, vign);
+
+  float alpha = clamp(0.55 + sheet, 0.0, 1.0);
+  fragColor = vec4(color, alpha);
+}` : `
+precision highp float;
+uniform float uTime, uAmplitude, uBlend; uniform vec3 uColorStops[3]; uniform vec2 uResolution;
+void main(){
+  vec2 uv = gl_FragCoord.xy / uResolution;
+  float t = uTime * 0.2;
+  float y = sin(uv.x * 8.0 + t) * 0.25 * uAmplitude;
+  float d = smoothstep(uv.y - y - 0.05, uv.y - y + 0.05, 0.5);
+  vec3 c = mix(uColorStops[0], mix(uColorStops[1], uColorStops[2], uv.x), uv.x);
+  float a = clamp(0.55 + d * uBlend, 0.0, 1.0);
+  gl_FragColor = vec4(0.10 * c + c * d, a);
+}`;
+
+      const config = {
+        colorStops: ["#2bffe7", "#ffffff", "#2a3e9b"],
+        amplitude: 0.01,
+        blend: 0.8,
+        speed: 1
+      };
+
+      gl.clearColor(0,0,0,0);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+
+      gl.canvas.style.width = "100%";
+      gl.canvas.style.height = "100%";
+      gl.canvas.style.display = "block";
+      host.appendChild(gl.canvas);
+
+      const geometry = new Geometry(gl, {
+        position: { size: 2, data: new Float32Array([ -1,-1, 3,-1, -1,3 ]) }
+      });
+
+      const stops = config.colorStops.map(hex => {
+        const c = new Color(hex);
+        return [c.r, c.g, c.b];
+      });
+
+      const program = new Program(gl, {
+        vertex: VERT,
+        fragment: FRAG,
+        uniforms: {
+          uTime:       { value: 0 },
+          uAmplitude:  { value: config.amplitude },
+          uBlend:      { value: config.blend },
+          uColorStops: { value: stops },
+          uResolution: { value: [host.clientWidth, host.clientHeight] }
+        }
+      });
+
+      const mesh = new Mesh(gl, { geometry, program });
+
+      function resize() {
+        const w = Math.max(1, host.clientWidth  || window.innerWidth);
+        const h = Math.max(1, host.clientHeight || window.innerHeight);
+        (renderer.setSize)(w, h, (window.devicePixelRatio || 1));
+        program.uniforms.uResolution.value = [w, h];
+      }
+      const ro = new ResizeObserver(resize);
+      ro.observe(host);
+      window.addEventListener('resize', resize);
+      resize();
+
+      let raf = 0;
+      const t0 = performance.now();
+      function frame(now) {
+        raf = requestAnimationFrame(frame);
+        const t = (now - t0) * 0.001 * (config.speed || 1.0);
+        program.uniforms.uTime.value = t;
+        renderer.render({ scene: mesh });
+      }
+      raf = requestAnimationFrame(frame);
+
+      const mo = new MutationObserver(() => {
+        if (!document.body.contains(host)) {
+          cancelAnimationFrame(raf);
+          ro.disconnect();
+          gl.getExtension('WEBGL_lose_context')?.loseContext();
+          mo.disconnect();
+        }
+      });
+      mo.observe(document.body, { childList: true, subtree: true });
+
+      console.info("[Aurora] WebGL mounted (", isWebGL2 ? "WebGL2" : "WebGL1", ")");
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", mountAurora);
+    } else {
+      mountAurora();
+    }
+  </script>
+</body>
+</html>
