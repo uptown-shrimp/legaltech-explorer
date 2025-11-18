@@ -1,4 +1,4 @@
-<!-- NOTE: This is an older prototype. The production UI is now in static/index.html. -->
+<!-- FRONTEND VERSION: synced from v17 into static/index.html via Claude Code -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -201,14 +201,14 @@
 
   <!-- AI search overlay -->
   <div id="aiLanding">
-    <div class="logo-chip"><img src="logos/clario.png" alt="Clario" style="height:22px"></div>
+    <div class="logo-chip"><img src="/static/logos/clario.png" alt="Clario" style="height:22px"></div>
 
     <!-- Typewriter headline (single line) -->
     <div id="typewriter" class="typewriter">
       <span class="text"></span><span class="cursor">|</span>
     </div>
 
-    <div class="sub">e.g. “AI contract automation for in-house teams in Australia”</div>
+    <div class="sub">e.g. "AI contract automation for in-house teams in Australia"</div>
 
     <textarea id="aiQuery" rows="3" placeholder="Type your search…"
       style="width:min(620px,86vw);padding:12px;border-radius:12px;border:1px solid var(--border);font-size:14px;resize:none;background:#0f1220;color:#e9eef7;"></textarea>
@@ -225,7 +225,7 @@
   <header>
     <div class="topbar">
       <div class="brand">
-        <img src="logos/clario.png" alt="Clario" class="brand-logo">
+        <img src="/static/logos/clario.png" alt="Clario" class="brand-logo">
         <h1>Legal-Tech Explorer</h1>
       </div>
       <span class="spacer"></span>
@@ -320,12 +320,12 @@
 
   // Polyfill CSS.escape
   if (typeof CSS === 'undefined' || typeof CSS.escape !== 'function') {
-    (function(){ var cssEscape = function(value){ return String(value).replace(/[^a-zA-Z0-9_\u00A0-\u10FFFF-]/g,'\\\\$&'); };
+    (function(){ var cssEscape = function(value){ return String(value).replace(/[^a-zA-Z0-9_\u00A0-\u10FFFF-]/g,'\\$&'); };
       window.CSS = window.CSS || {}; CSS.escape = CSS.escape || cssEscape; })();
   }
 
   /* ===== Typewriter (single line, faster) ===== */
-  const TYPE_TEXT = "Describe the legal-tech you’re looking for";
+  const TYPE_TEXT = "Describe the legal-tech you're looking for";
   const TYPE_SPEED = 55;      // ms per char
   const DELETE_SPEED = 28;
   const PAUSE_MS = 900;
@@ -439,7 +439,7 @@
   function splitMulti(v){ if(!v) return []; return String(v).split(/[;,|\/\n]+/).map(x=>x.trim()).filter(Boolean); }
   function vendorSlug(name){ return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
   function vendorNoSpace(name){ return String(name||'').replace(/\s+/g,''); }
-  function logoCandidates(name){ var a=[], raw=vendorNoSpace(name), slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(ext=>{ a.push('logos/'+raw+'.'+ext); a.push('logos/'+slug+'.'+ext); }); return a; }
+  function logoCandidates(name){ var a=[], raw=vendorNoSpace(name), slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(ext=>{ a.push('/static/logos/'+raw+'.'+ext); a.push('/static/logos/'+slug+'.'+ext); }); return a; }
   function makeLogoEl(name){
     var img=document.createElement('img'); img.className='logo';
     var tries=logoCandidates(name); if(!tries.length){ return initialsBadge(name); }
@@ -841,7 +841,7 @@
   }
 
   /* ===== AUTO-IMPORT CSV ON LAUNCH ===== */
-  const AUTO_CSV_URL = 'top_50_3.csv'; // place this CSV next to this HTML file
+  const AUTO_CSV_URL = '/static/data/top_50_3.csv';
 
   async function loadCSVFromURL(url){
     try{
@@ -985,7 +985,7 @@
     if(!q){ aiStatus.textContent="Please type what you need."; return; }
     aiStatus.textContent="Thinking…";
     try{
-      const res = await fetch("http://127.0.0.1:8000/query", {
+      const res = await fetch("/query", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({ query:q })
@@ -1005,7 +1005,7 @@
       applyFilters();
     }catch(err){
       console.error("Network/Fetch failed:", err);
-      aiStatus.textContent = `Couldn’t reach the AI server: ${err?.message||err}`;
+      aiStatus.textContent = `Couldn't reach the AI server: ${err?.message||err}`;
     }
   }
 

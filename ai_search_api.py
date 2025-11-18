@@ -5,7 +5,8 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -219,11 +220,18 @@ def call_openai_json(system_msg: str, user_msg: str) -> Dict[str, Any]:
     raise RuntimeError(f"All model attempts failed. Last error: {last_err}")
 
 # =========================
+# Static files setup
+# =========================
+# Mount static files directory for logos, CSV, and other assets
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# =========================
 # Routes
 # =========================
 @app.get("/")
 def root():
-    return RedirectResponse("/docs")
+    """Serve the main frontend HTML"""
+    return FileResponse("static/index.html")
 
 @app.get("/health")
 def health():
