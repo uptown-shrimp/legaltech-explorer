@@ -198,7 +198,7 @@
 
   <!-- AI search overlay -->
   <div id="aiLanding">
-    <div class="logo-chip"><img src="logos/clario.png" alt="Clario" style="height:22px"></div>
+    <div class="logo-chip"><img src="./logos/clario.png" alt="Clario" style="height:22px"></div>
 
     <!-- Typewriter headline (single line) -->
     <div id="typewriter" class="typewriter">
@@ -222,7 +222,7 @@
   <header>
     <div class="topbar">
       <div class="brand">
-        <img src="logos/clario.png" alt="Clario" class="brand-logo">
+        <img src="./logos/clario.png" alt="Clario" class="brand-logo">
         <h1>Legal-Tech Explorer</h1>
       </div>
       <span class="spacer"></span>
@@ -439,7 +439,7 @@
   function splitMulti(v){ if(!v) return []; return String(v).split(/[;,|\/\n]+/).map(x=>x.trim()).filter(Boolean); }
   function vendorSlug(name){ return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
   function vendorNoSpace(name){ return String(name||'').replace(/\s+/g,''); }
-  function logoCandidates(name){ var a=[], raw=vendorNoSpace(name), slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(ext=>{ a.push('logos/'+raw+'.'+ext); a.push('logos/'+slug+'.'+ext); }); return a; }
+  function logoCandidates(name){ var a=[], raw=vendorNoSpace(name), slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(ext=>{ a.push('./logos/'+raw+'.'+ext); a.push('./logos/'+slug+'.'+ext); }); return a; }
   function makeLogoEl(name){
     var img=document.createElement('img'); img.className='logo';
     var tries=logoCandidates(name); if(!tries.length){ return initialsBadge(name); }
