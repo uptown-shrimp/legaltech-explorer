@@ -37,6 +37,9 @@ app.add_middleware(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount logos and data at root for easier access
+app.mount("/logos", StaticFiles(directory="static/logos"), name="logos")
+app.mount("/data", StaticFiles(directory="static/data"), name="data")
 
 # =========================
 # Schema your UI understands
