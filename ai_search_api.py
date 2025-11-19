@@ -18,7 +18,8 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # Default to a widely available model. Override via .env OPENAI_MODEL=...
 OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Initialize client only if API key is available (allows server to run for static files)
+client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 app = FastAPI(title="Legal-Tech Filter API", version="0.2.0")
 
@@ -203,6 +204,8 @@ FALLBACK_MODELS = [
 ]
 
 def call_openai_json(system_msg: str, user_msg: str) -> Dict[str, Any]:
+    if not client:
+        raise RuntimeError("OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.")
     last_err = None
     for m in FALLBACK_MODELS:
         try:
