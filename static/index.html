@@ -35,7 +35,8 @@
 
   header{position:sticky;top:0;z-index:20;background:#12131cba;border-bottom:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.25);backdrop-filter:blur(6px)}
   .topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:1400px;margin:0 auto}
-  .brand{display:flex;align-items:center;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px;cursor:pointer;transition:opacity .2s;}
+  .brand:hover{opacity:0.8;}
   .brand-logo{height:22px;filter:brightness(1.2) contrast(1.05)}
   h1{margin:0;font-size:16px;font-weight:700;letter-spacing:.2px}
   .sub{color:#a9b2c2;font-size:12px}
@@ -943,6 +944,13 @@
   }
 
   // Header buttons
+  document.querySelector('.brand').addEventListener('click', function(){
+    // Return to landing page
+    document.getElementById('aiLanding').style.display='flex';
+    document.body.classList.add('has-landing');
+    HAS_SEARCHED = false;
+    applyFilters();
+  });
   document.getElementById('filtersBtn').onclick=openFilters;
   document.getElementById('closeFilters').onclick=closeFilters;
   document.getElementById('closeRight').onclick=closeRight;
