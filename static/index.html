@@ -109,15 +109,8 @@
     display:flex;flex-direction:column;gap:10px;
     transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .2s ease, filter .2s ease;
     opacity:1; filter:none;
-    --mouse-x:50%; --mouse-y:50%; --spot-color: var(--spotlight);
   }
   .tool:hover{ box-shadow:0 14px 32px rgba(0,0,0,.45); transform:translateY(-1px); border-color:#3b82f6; }
-  .tool::before{
-    content:''; position:absolute; inset:0;
-    background: radial-gradient(220px circle at var(--mouse-x) var(--mouse-y), var(--spot-color), transparent 65%);
-    opacity:0; transition:opacity .25s ease; pointer-events:none;
-  }
-  .tool:hover::before{ opacity:.75; }
 
   .tool-head{display:flex;align-items:center;gap:12px}
   .title{font-weight:700;font-size:15px}
@@ -138,6 +131,7 @@
   }
   body.has-landing{overflow:hidden;}
   body.has-landing .wrap{display:none;}
+  body.has-landing #filtersBtn{display:none;}
   .logo-chip { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border-radius:16px;
     background:rgba(230, 230, 230, 0.92); box-shadow:0 8px 28px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
   .logo-chip img { filter:brightness(1.3) contrast(1.1); height:32px; }
@@ -601,22 +595,6 @@
     return out;
   }
 
-  /* spotlight tracking */
-  function attachSpotlight(card){
-    let raf = null, px = 0, py = 0;
-    card.addEventListener('mousemove', (e)=>{
-      const rect = card.getBoundingClientRect();
-      px = e.clientX - rect.left;
-      py = e.clientY - rect.top;
-      if(raf) return;
-      raf = requestAnimationFrame(()=>{
-        card.style.setProperty('--mouse-x', px + 'px');
-        card.style.setProperty('--mouse-y', py + 'px');
-        raf = null;
-      });
-    });
-  }
-
   function renderList(rows){
     const container = toolsEl;
     if(!HAS_SEARCHED){
@@ -655,8 +633,6 @@
 
       card.appendChild(head); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
       frag.appendChild(card);
-
-      attachSpotlight(card);
     });
 
     container.appendChild(frag);
@@ -948,6 +924,8 @@
     // Return to landing page
     document.getElementById('aiLanding').style.display='flex';
     document.body.classList.add('has-landing');
+    document.getElementById('aiStatus').textContent = '';
+    document.getElementById('aiQuery').value = '';
     HAS_SEARCHED = false;
     applyFilters();
   });
