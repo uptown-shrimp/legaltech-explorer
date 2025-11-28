@@ -25,7 +25,7 @@
   }
 
   *{box-sizing:border-box}
-  html,body{height:100%}
+  html,body{height:100%;overflow:hidden}
   body{
     margin:0;
     background:var(--bg);
@@ -48,8 +48,8 @@
 
   /* Layout + responsive reordering */
   .wrap{
-    display:grid;gap:16px;padding:16px;max-width:1400px;margin:0 auto;min-height:calc(100vh - 64px);
-    grid-template-columns:1fr;transition:grid-template-columns .35s ease
+    display:grid;gap:16px;padding:16px;max-width:1400px;margin:0 auto;height:calc(100vh - 64px);
+    grid-template-columns:1fr;transition:grid-template-columns .35s ease;overflow:hidden;
   }
   /* default order: left, main, right */
   aside.left{order:1}
@@ -120,7 +120,13 @@
   .logo{width:48px;height:48px;object-fit:contain;border-radius:10px;background:#0e1220;border:1px solid var(--border);padding:6px}
   .logo-badge{display:flex;align-items:center;justify-content:center;font-weight:800;color:#c7d2fe;background:#0e1220;border:1px solid var(--border);border-radius:12px;width:48px;height:48px}
 
-  .left, main, .right{overflow:auto;outline:none;max-height:calc(100vh - 80px)}
+  .left, main, .right{overflow:auto;outline:none;max-height:calc(100vh - 80px);padding-right:8px}
+
+  /* Custom scrollbar styling */
+  .left::-webkit-scrollbar, main::-webkit-scrollbar, .right::-webkit-scrollbar, .compare-wrap::-webkit-scrollbar{width:8px}
+  .left::-webkit-scrollbar-track, main::-webkit-scrollbar-track, .right::-webkit-scrollbar-track, .compare-wrap::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:4px}
+  .left::-webkit-scrollbar-thumb, main::-webkit-scrollbar-thumb, .right::-webkit-scrollbar-thumb, .compare-wrap::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:4px}
+  .left::-webkit-scrollbar-thumb:hover, main::-webkit-scrollbar-thumb:hover, .right::-webkit-scrollbar-thumb:hover, .compare-wrap::-webkit-scrollbar-thumb:hover{background:var(--scroll-thumb-hover)}
 
   /* Landing overlay */
   #aiLanding{
@@ -156,7 +162,8 @@
 
   /* Compare table */
   .compare-wrap { max-height: 360px; overflow:auto; overflow-x:auto; }
-  #compareTable{ min-width:900px; }
+  #compareTable{ min-width:900px; table-layout:fixed; }
+  #compareTable th:first-child, #compareTable td:first-child { width:200px; }
   .compare thead th {
     position: sticky; top: 0; z-index: 2;
     background:#0f1220; border:1px solid var(--border);
@@ -167,6 +174,10 @@
   .compare thead th .head-badge { width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:800; background:#0e1220; border:1px solid var(--border); font-size:11px; }
 
   #compareList{ display:none !important; } /* hidden pill row */
+
+  /* Compare controls */
+  .compare-controls{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  .compare-controls label{display:flex;align-items:center;gap:6px;font-size:12px;color:#9aa3b8;cursor:pointer}
 
   /* Staggered reveal for list */
   .reveal-child{opacity:0; transform:translateY(8px); transition:opacity .28s ease, transform .28s ease}
@@ -218,7 +229,6 @@
   <!-- Top bar -->
   <header>
     <div class="topbar">
-      <button id="filtersBtn" class="btn">Filters</button>
       <div class="brand">
         <img src="logos/clario.png" alt="Clario" class="brand-logo">
         <h1>Legal-Tech Explorer</h1>
@@ -242,8 +252,16 @@
     <!-- Middle: Results -->
     <main>
       <div class="toolbar">
-        <div class="col-title">Results</div>
+        <button id="filtersBtn" class="btn">Filters</button>
+        <span class="spacer"></span>
         <div style="display:flex;align-items:center;gap:12px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9aa3b8">
+            Sort:
+            <select id="sortOrder" style="padding:4px 8px;font-size:12px;width:auto">
+              <option value="relevance">Relevance</option>
+              <option value="alphabetical">Alphabetical</option>
+            </select>
+          </label>
           <span class="sub" id="searchQuery"></span>
           <span class="sub" id="count"></span>
         </div>
@@ -255,15 +273,15 @@
 
     <!-- Right: Details / Compare -->
     <aside class="right is-hidden" id="rightSidebar">
-      <div class="toolbar" style="gap:8px">
-        <div style="display:flex;flex-direction:column;gap:6px">
+      <div class="toolbar" style="gap:8px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1">
           <div class="col-title" id="rightTitle">Panel</div>
           <div class="tabs">
             <button id="tabDetails" class="tab active" type="button">Details</button>
             <button id="tabCompare" class="tab" type="button">Compare <span id="compareCount">(0)</span></button>
           </div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:flex-start;padding-top:2px">
           <button class="btn" id="expandRight">Expand</button>
           <button class="btn" id="closeRight">Close</button>
         </div>
@@ -274,7 +292,11 @@
       <div class="box is-hidden" id="compareBox">
         <div class="col-title" style="margin-bottom:8px">Comparison</div>
         <div id="compareList" class="filter-row" style="display:none"></div>
-        <div style="height:8px"></div>
+        <div class="compare-controls">
+          <label><input type="checkbox" id="showDifferencesOnly"> Show only differences</label>
+          <button class="btn" id="aiSummaryBtn" style="padding:4px 8px;font-size:11px">AI Summary</button>
+        </div>
+        <div id="aiSummaryBox" style="display:none;background:#0e1220;border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;line-height:1.5"></div>
         <div class="compare-wrap">
           <table class="compare" id="compareTable" style="width:100%;border-collapse:separate;border-spacing:0 8px;font-size:12px"></table>
         </div>
@@ -555,6 +577,11 @@
     optRow.innerHTML='<label>Options</label><label style="font-size:12px;color:#9aa3b8"><input id="dedupeVendor" type="checkbox" checked> Deduplicate identical rows</label>';
     filtersBox.appendChild(optRow);
 
+    // More Filters button
+    var moreFiltersRow = document.createElement('div'); moreFiltersRow.className='filter-field'; moreFiltersRow.style.marginTop='12px';
+    moreFiltersRow.innerHTML = '<button class="btn" id="moreFiltersBtn" style="width:100%">More Filters</button>';
+    filtersBox.appendChild(moreFiltersRow);
+
     if (!__filtersListenerAttached) {
       filtersBox.addEventListener('input', applyFilters);
       __filtersListenerAttached = true;
@@ -612,6 +639,16 @@
       searchQueryEl.textContent = 'Results for: "' + LAST_QUERY + '"';
     } else {
       searchQueryEl.textContent = '';
+    }
+
+    // Apply sorting
+    const sortOrder = document.getElementById('sortOrder');
+    if(sortOrder && sortOrder.value === 'alphabetical'){
+      rows = rows.slice().sort((a, b) => {
+        const nameA = (a.__display_name || a['Product Name'] || '').toLowerCase();
+        const nameB = (b.__display_name || b['Product Name'] || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
     }
 
     countEl.textContent = rows.length + ' tools';
@@ -780,6 +817,75 @@
 
     tbl.innerHTML=''; tbl.appendChild(thead); tbl.appendChild(tbody);
     updateCompareCount();
+    applyShowDifferences(); // Apply show differences filter if enabled
+  }
+
+  // Show only differences functionality
+  function applyShowDifferences(){
+    const checkbox = document.getElementById('showDifferencesOnly');
+    if(!checkbox || !checkbox.checked){
+      // Show all rows
+      Array.from(document.querySelectorAll('#compareTable tbody tr')).forEach(tr => tr.style.display = '');
+      return;
+    }
+
+    // Hide rows where all values are the same
+    Array.from(document.querySelectorAll('#compareTable tbody tr')).forEach(tr => {
+      const cells = Array.from(tr.querySelectorAll('td'));
+      const values = cells.map(td => td.textContent.trim());
+      const allSame = values.every(v => v === values[0]);
+      tr.style.display = allSame ? 'none' : '';
+    });
+  }
+
+  // AI Summary functionality
+  async function generateAISummary(){
+    const summaryBox = document.getElementById('aiSummaryBox');
+    const btn = document.getElementById('aiSummaryBtn');
+
+    if(!compare.length){
+      summaryBox.style.display = 'block';
+      summaryBox.textContent = 'Please select tools to compare first.';
+      return;
+    }
+
+    btn.textContent = 'Generating...';
+    btn.disabled = true;
+    summaryBox.style.display = 'block';
+    summaryBox.textContent = 'Analyzing comparison...';
+
+    try{
+      const selectedRecords = compare.map(id => DATA.find(r=>r.__id===id)).filter(Boolean);
+      const comparisonData = selectedRecords.map(rec => ({
+        name: rec.__display_name || rec['Product Name'],
+        vendor: rec['Vendor Name'],
+        description: rec['Product Description'],
+        pricing: rec['Approx. Price Range (AUD)'],
+        deployment: rec['Deployment Model'],
+        aiPowered: rec['AI Powered'],
+        easeOfPurchase: rec['Ease of Purchase'],
+        adoptionLevel: rec['Adoption Level']
+      }));
+
+      const res = await fetch("http://127.0.0.1:8000/summarize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tools: comparisonData })
+      });
+
+      if(!res.ok){
+        throw new Error(`Server error ${res.status}`);
+      }
+
+      const data = await res.json();
+      summaryBox.innerHTML = data.summary || 'No summary generated.';
+    }catch(err){
+      console.error("AI Summary failed:", err);
+      summaryBox.textContent = `Could not generate summary: ${err.message || err}. Note: This requires a /summarize endpoint on the backend.`;
+    }finally{
+      btn.textContent = 'AI Summary';
+      btn.disabled = false;
+    }
   }
 
   function toggleCompare(id){
@@ -1051,6 +1157,34 @@
 
   aiBtn?.addEventListener('click', runAISearch);
   aiQuery?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); runAISearch(); }});
+
+  // Show differences checkbox listener
+  document.addEventListener('change', function(e){
+    if(e.target.id === 'showDifferencesOnly'){
+      applyShowDifferences();
+    }
+  });
+
+  // AI Summary button listener
+  document.addEventListener('click', function(e){
+    if(e.target.id === 'aiSummaryBtn'){
+      generateAISummary();
+    }
+  });
+
+  // More Filters button listener
+  document.addEventListener('click', function(e){
+    if(e.target.id === 'moreFiltersBtn'){
+      alert('More Filters feature: This would expand to show additional filter options. You can customize which filters are shown by default vs. behind this button.');
+    }
+  });
+
+  // Sort order listener
+  document.addEventListener('change', function(e){
+    if(e.target.id === 'sortOrder'){
+      applyFilters();
+    }
+  });
 
   // Init
   document.body.classList.add('has-landing'); // Add landing class on load
