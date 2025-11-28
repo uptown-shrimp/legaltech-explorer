@@ -131,22 +131,30 @@
   /* Landing overlay */
   #aiLanding{
     position:fixed;inset:0;
-    background:var(--bg);
+    background:rgba(11,10,18,0.85);
+    backdrop-filter: blur(8px) saturate(1.12);
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;padding:16px;
     overflow:hidden;
   }
   body.has-landing{overflow:hidden;}
   body.has-landing header{display:none;}
-  body.has-landing main{display:none;}
   .logo-chip { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border-radius:16px;
     background:rgba(230, 230, 230, 0.92); box-shadow:0 8px 28px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
   .logo-chip img { filter:brightness(1.3) contrast(1.1); height:32px; }
 
   .landing-actions{display:flex; justify-content:center; gap:8px; width:100%}
 
+  /* Suggestion chips */
+  .suggestion-chips{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; width:min(620px,86vw); margin-top:4px;}
+  .suggestion-chip{
+    padding:8px 14px; border-radius:20px; background:rgba(34,184,195,0.12); border:1px solid rgba(34,184,195,0.3);
+    color:#9bd6e0; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s ease;
+  }
+  .suggestion-chip:hover{background:rgba(34,184,195,0.22); border-color:rgba(34,184,195,0.5); transform:translateY(-1px);}
+
   /* Landing text styles */
-  .static-tagline{font-size:14px; font-weight:500; color:#9aa3b8; line-height:1.4; text-align:center; max-width:600px; margin-bottom:8px;}
-  .static-headline{font-size:28px; font-weight:700; color:#e9eef7; line-height:1.3; text-align:center; margin-bottom:12px;}
+  .static-headline{font-size:28px; font-weight:700; color:#e9eef7; line-height:1.3; text-align:center; margin-bottom:4px;}
+  .static-tagline{font-size:14px; font-weight:500; color:#9aa3b8; line-height:1.4; text-align:center; max-width:500px;}
 
   /* Aurora */
   .aurora-bg{ pointer-events:none; filter:saturate(1.12) contrast(1.06); }
@@ -204,14 +212,17 @@
   <div id="aiLanding">
     <div class="logo-chip"><img src="logos/clario.png" alt="Clario"></div>
 
-    <!-- Static tagline -->
-    <div class="static-tagline">A curated explorer of legal tech tools for in house legal teams in Australia</div>
-
     <!-- Static headline -->
     <div class="static-headline">Describe the legal-tech you're looking for</div>
 
+    <!-- Static tagline -->
+    <div class="static-tagline">A curated explorer of legal tech tools for in house legal teams in Australia</div>
+
     <textarea id="aiQuery" rows="3" placeholder=""
       style="width:min(620px,86vw);padding:12px;border-radius:12px;border:1px solid var(--border);font-size:14px;resize:none;background:#0f1220;color:#e9eef7;"></textarea>
+
+    <!-- Suggestion chips -->
+    <div class="suggestion-chips" id="suggestionChips"></div>
 
     <!-- Only the Search button, centered -->
     <div class="landing-actions">
@@ -359,6 +370,26 @@
       }
     }
     tick();
+  })();
+
+  /* ===== Suggestion Chips ===== */
+  (function setupSuggestionChips(){
+    const chipsContainer = document.getElementById('suggestionChips');
+    if(!chipsContainer) return;
+
+    SUGGESTIONS.forEach(function(suggestion){
+      const chip = document.createElement('div');
+      chip.className = 'suggestion-chip';
+      chip.textContent = suggestion;
+      chip.addEventListener('click', function(){
+        const aiQuery = document.getElementById('aiQuery');
+        if(aiQuery){
+          aiQuery.value = suggestion;
+          runAISearch();
+        }
+      });
+      chipsContainer.appendChild(chip);
+    });
   })();
 
   /* ===== Schema / Data / Helpers ===== */
