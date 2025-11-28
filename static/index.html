@@ -131,10 +131,13 @@
   /* Landing overlay */
   #aiLanding{
     position:fixed;inset:0;
-    background:rgba(11,10,18,0.96);
-    backdrop-filter: blur(12px) saturate(1.12);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:10;padding:16px
+    background:rgba(11,10,18,0.85);
+    backdrop-filter: blur(8px) saturate(1.12);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;padding:16px;
+    overflow:hidden;
   }
+  body.has-landing{overflow:hidden;}
+  body.has-landing header{display:none;}
   .logo-chip { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border-radius:16px;
     background:rgba(230, 230, 230, 0.92); box-shadow:0 8px 28px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
   .logo-chip img { filter:brightness(1.3) contrast(1.1); height:32px; }
@@ -149,11 +152,9 @@
   }
   .suggestion-chip:hover{background:rgba(34,184,195,0.22); border-color:rgba(34,184,195,0.5); transform:translateY(-1px);}
 
-  /* Typewriter — rotating prompts */
-  .static-headline{font-size:26px; font-weight:700; color:#e9eef7; line-height:1.25; text-align:center; margin-bottom:8px;}
-  .typewriter{font-size:16px; font-weight:500; color:#9aa3b8; line-height:1.25; text-align:center; min-height:24px;}
-  .typewriter .cursor{display:inline-block; margin-left:.2rem; width:1ch; animation: blink .85s steps(1) infinite;}
-  @keyframes blink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+  /* Landing text styles */
+  .static-headline{font-size:28px; font-weight:700; color:#e9eef7; line-height:1.3; text-align:center; margin-bottom:4px;}
+  .static-tagline{font-size:14px; font-weight:500; color:#9aa3b8; line-height:1.4; text-align:center; max-width:500px;}
 
   /* Aurora */
   .aurora-bg{ pointer-events:none; filter:saturate(1.12) contrast(1.06); }
@@ -202,7 +203,7 @@
   }
 </style>
 </head>
-<body class="state-main">
+<body class="state-main has-landing">
 
   <!-- FULLSCREEN AURORA -->
   <div id="auroraCanvas" class="aurora-bg fullscreen"></div>
@@ -214,12 +215,10 @@
     <!-- Static headline -->
     <div class="static-headline">Describe the legal-tech you're looking for</div>
 
-    <!-- Rotating prompts typewriter -->
-    <div id="typewriter" class="typewriter">
-      <span class="text"></span><span class="cursor">|</span>
-    </div>
+    <!-- Static tagline -->
+    <div class="static-tagline">A curated explorer of legal tech tools for in house legal teams in Australia</div>
 
-    <textarea id="aiQuery" rows="3" placeholder="Type your search…"
+    <textarea id="aiQuery" rows="3" placeholder=""
       style="width:min(620px,86vw);padding:12px;border-radius:12px;border:1px solid var(--border);font-size:14px;resize:none;background:#0f1220;color:#e9eef7;"></textarea>
 
     <!-- Suggestion chips -->
@@ -229,8 +228,6 @@
     <div class="landing-actions">
       <button id="aiSearchBtn" class="btn primary">Search</button>
     </div>
-
-    <div class="sub" style="margin-top:8px;">A curated explorer for legal-tech tools used by in-house teams in Australia.</div>
 
     <div id="aiStatus" class="sub" style="min-height:18px"></div>
   </div>
@@ -336,7 +333,7 @@
       window.CSS = window.CSS || {}; CSS.escape = CSS.escape || cssEscape; })();
   }
 
-  /* ===== Rotating Suggestions Typewriter ===== */
+  /* ===== Rotating Suggestions Typewriter (in placeholder) ===== */
   const SUGGESTIONS = [
     "AI contract automation for in-house teams in Australia",
     "Matter management tools that integrate with Microsoft 365",
@@ -346,15 +343,14 @@
   const DELETE_SPEED = 25;
   const PAUSE_MS = 2000;
 
-  (function typewriter(){
-    const wrap = document.getElementById('typewriter');
-    if(!wrap) return;
-    const textEl = wrap.querySelector('.text');
+  (function typewriterPlaceholder(){
+    const textarea = document.getElementById('aiQuery');
+    if(!textarea) return;
     let iLine = 0, iChar = 0, deleting = false;
     function tick(){
       const line = SUGGESTIONS[iLine];
       if(!deleting){
-        textEl.textContent = line.slice(0, iChar+1);
+        textarea.placeholder = line.slice(0, iChar+1);
         iChar++;
         if(iChar === line.length){
           setTimeout(()=>{ deleting = true; tick(); }, PAUSE_MS);
@@ -362,7 +358,7 @@
           setTimeout(tick, TYPE_SPEED);
         }
       } else {
-        textEl.textContent = line.slice(0, iChar-1);
+        textarea.placeholder = line.slice(0, iChar-1);
         iChar--;
         if(iChar === 0){
           deleting = false;
@@ -873,6 +869,7 @@
     DATA=normalizeRows(parsed.data);
     HAS_SEARCHED = true;              // show list after CSV import
     document.getElementById('aiLanding').style.display="none";
+    document.body.classList.remove('has-landing');
     buildFilters();
     applyFilters();
   }
@@ -1033,6 +1030,7 @@
       aiStatus.textContent="Applying…";
       HAS_SEARCHED = true;
       document.getElementById('aiLanding').style.display="none";
+      document.body.classList.remove('has-landing');
       applyFilters();
     }catch(err){
       console.error("Network/Fetch failed:", err);
@@ -1080,6 +1078,7 @@
   aiQuery?.addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); runAISearch(); }});
 
   // Init
+  document.body.classList.add('has-landing'); // Add landing class on load
   buildFilters();
   applyFilters();
   loadCSVFromURL(AUTO_CSV_URL);  // preload database silently
