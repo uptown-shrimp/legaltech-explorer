@@ -105,6 +105,9 @@ USER_SEGMENT_CANON = {
 class Query(BaseModel):
     query: str
 
+class ComparisonRequest(BaseModel):
+    tools: List[Dict[str, Any]]
+
 # =========================
 # Helpers
 # =========================
@@ -249,5 +252,50 @@ async def generate_filters(req: Query):
         model_obj = call_openai_json(system_msg, user_msg)
         clean = normalize_to_schema(model_obj)
         return clean
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/summarize")
+async def summarize_comparison(req: ComparisonRequest):
+    """
+    Generate an AI summary comparing multiple legal tech tools.
+    """
+    if not req.tools or len(req.tools) == 0:
+        return JSONResponse(status_code=400, content={"error": "No tools provided for comparison"})
+
+    # Build a comparison prompt
+    tools_text = ""
+    for i, tool in enumerate(req.tools, 1):
+        tools_text += f"\n\n**Tool {i}: {tool.get('name', 'Unknown')}**\n"
+        tools_text += f"- Vendor: {tool.get('vendor', 'N/A')}\n"
+        tools_text += f"- Description: {tool.get('description', 'N/A')}\n"
+        tools_text += f"- Pricing: {tool.get('pricing', 'N/A')}\n"
+        tools_text += f"- Deployment: {tool.get('deployment', 'N/A')}\n"
+        tools_text += f"- AI Powered: {tool.get('aiPowered', 'N/A')}\n"
+        tools_text += f"- Ease of Purchase: {tool.get('easeOfPurchase', 'N/A')}\n"
+        tools_text += f"- Adoption Level: {tool.get('adoptionLevel', 'N/A')}\n"
+
+    system_msg = (
+        "You are an expert legal technology consultant. Analyze the provided legal tech tools and generate "
+        "a concise, insightful comparison summary. Focus on:\n"
+        "1. Key similarities and differences\n"
+        "2. Strengths and weaknesses of each tool\n"
+        "3. Best use cases for each tool\n"
+        "4. Pricing and value considerations\n"
+        "5. A recommendation based on common use cases\n\n"
+        "Format your response in clean HTML with paragraphs and bullet points. "
+        "Keep it under 300 words and make it actionable for legal teams making purchasing decisions.\n"
+        "Return ONLY a JSON object with a single 'summary' field containing the HTML content."
+    )
+
+    user_msg = f"Compare these legal tech tools:{tools_text}\n\nProvide a comparison summary in JSON format."
+
+    try:
+        result = call_openai_json(system_msg, user_msg)
+        if isinstance(result, dict) and 'summary' in result:
+            return {"summary": result['summary']}
+        else:
+            # Fallback if the response doesn't have expected format
+            return {"summary": str(result)}
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
