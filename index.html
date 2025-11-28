@@ -50,6 +50,7 @@
   .wrap{
     display:grid;gap:16px;padding:16px;max-width:1400px;margin:0 auto;height:calc(100vh - 64px);
     grid-template-columns:1fr;transition:grid-template-columns .35s ease;overflow:hidden;
+    background:var(--bg);position:relative;z-index:1;
   }
   /* default order: left, main, right */
   aside.left{order:1}
@@ -65,8 +66,8 @@
   body.state-right.state-compare-full aside.right{
     grid-column:1 / -1; order:0; position:relative; z-index:5;
   }
-  body.state-right.state-compare-full main{order:2}
-  body.state-right.state-compare-full aside.left{order:3}
+  body.state-right.state-compare-full main{display:none}
+  body.state-right.state-compare-full aside.left{display:none}
 
   aside.left, aside.right, main{min-height:0}
   aside.left, aside.right{
@@ -255,13 +256,6 @@
         <button id="filtersBtn" class="btn">Filters</button>
         <span class="spacer"></span>
         <div style="display:flex;align-items:center;gap:12px">
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#9aa3b8">
-            Sort:
-            <select id="sortOrder" style="padding:4px 8px;font-size:12px;width:auto">
-              <option value="relevance">Relevance</option>
-              <option value="alphabetical">Alphabetical</option>
-            </select>
-          </label>
           <span class="sub" id="searchQuery"></span>
           <span class="sub" id="count"></span>
         </div>
@@ -551,26 +545,17 @@
       else if(cfg.type==='multi') addMultiChips(sec,key,opts);
     });
 
-    var hiddenKeys = SCHEMA.map(s=>s.key).filter(k => ALLOWED_FILTER_KEYS.indexOf(k)===-1);
-    hiddenKeys.forEach(function(key){
+    // Add hidden filters section (initially hidden)
+    var hiddenSec = groupContainer('Additional Filters');
+    hiddenSec.setAttribute('data-filter-type', 'hidden');
+    hiddenSec.style.display = 'none';
+
+    var additionalKeys = SCHEMA.map(s=>s.key).filter(k => ALLOWED_FILTER_KEYS.indexOf(k)===-1 && k !== 'Vendor Overview' && k !== 'Product Description' && k !== 'Customer Reviews' && k !== 'Vendor Contact Details' && k !== 'Vendor Name' && k !== 'Product Name');
+    additionalKeys.forEach(function(key){
       var cfg=SCHEMA.find(s=>s.key===key); if(!cfg) return;
-      if(cfg.type==='single'){
-        var sel=document.createElement('select'); sel.setAttribute('data-key', key); sel.style.display='none';
-        var values = uniqueValues(key);
-        sel.innerHTML = '<option value=""></option>' + values.map(v=>'<option>'+esc(v)+'</option>').join('');
-        document.body.appendChild(sel);
-        CONTROLS.set(key,{ type:'single', get:function(){ return sel.value; }, _el: sel });
-      } else if(cfg.type==='multi'){
-        var holder=document.createElement('div'); holder.style.display='none'; holder.setAttribute('data-key', key);
-        var values = uniqueValues(key);
-        holder.innerHTML = values.map(v=>'<label><input type="checkbox" value="'+esc(v)+'"></label>').join('');
-        document.body.appendChild(holder);
-        CONTROLS.set(key,{ type:'multi', get:function(){ return Array.prototype.map.call(holder.querySelectorAll('input:checked'), c=>c.value); }, _el: holder });
-      } else {
-        var inp=document.createElement('input'); inp.type='text'; inp.style.display='none'; inp.setAttribute('data-key', key);
-        document.body.appendChild(inp);
-        CONTROLS.set(key,{ type:'single', get:function(){ return inp.value; }, _el: inp });
-      }
+      var opts=uniqueValues(key);
+      if(cfg.type==='single') addSingleSelect(hiddenSec,key,opts);
+      else if(cfg.type==='multi') addMultiChips(hiddenSec,key,opts);
     });
 
     var optRow=document.createElement('div'); optRow.className='filter-field';
@@ -641,15 +626,12 @@
       searchQueryEl.textContent = '';
     }
 
-    // Apply sorting
-    const sortOrder = document.getElementById('sortOrder');
-    if(sortOrder && sortOrder.value === 'alphabetical'){
-      rows = rows.slice().sort((a, b) => {
-        const nameA = (a.__display_name || a['Product Name'] || '').toLowerCase();
-        const nameB = (b.__display_name || b['Product Name'] || '').toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-    }
+    // Always sort alphabetically
+    rows = rows.slice().sort((a, b) => {
+      const nameA = (a.__display_name || a['Product Name'] || '').toLowerCase();
+      const nameB = (b.__display_name || b['Product Name'] || '').toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
 
     countEl.textContent = rows.length + ' tools';
     container.innerHTML = '';
@@ -1173,16 +1155,18 @@
   });
 
   // More Filters button listener
+  var moreFiltersExpanded = false;
   document.addEventListener('click', function(e){
     if(e.target.id === 'moreFiltersBtn'){
-      alert('More Filters feature: This would expand to show additional filter options. You can customize which filters are shown by default vs. behind this button.');
-    }
-  });
+      moreFiltersExpanded = !moreFiltersExpanded;
+      const btn = document.getElementById('moreFiltersBtn');
+      btn.textContent = moreFiltersExpanded ? 'Less Filters' : 'More Filters';
 
-  // Sort order listener
-  document.addEventListener('change', function(e){
-    if(e.target.id === 'sortOrder'){
-      applyFilters();
+      // Toggle visibility of hidden filters
+      const hiddenFilters = document.querySelectorAll('[data-filter-type="hidden"]');
+      hiddenFilters.forEach(el => {
+        el.style.display = moreFiltersExpanded ? 'block' : 'none';
+      });
     }
   });
 
