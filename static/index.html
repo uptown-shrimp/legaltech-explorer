@@ -131,13 +131,12 @@
   /* Landing overlay */
   #aiLanding{
     position:fixed;inset:0;
-    background:var(--bg);
+    background:transparent;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;padding:16px;
     overflow:hidden;
   }
   body.has-landing{overflow:hidden;}
-  body.has-landing header{display:none;}
-  body.has-landing main{display:none;}
+  body.has-landing .wrap{display:none;}
   .logo-chip { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border-radius:16px;
     background:rgba(230, 230, 230, 0.92); box-shadow:0 8px 28px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
   .logo-chip img { filter:brightness(1.3) contrast(1.1); height:32px; }
