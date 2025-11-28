@@ -35,7 +35,8 @@
 
   header{position:sticky;top:0;z-index:20;background:#12131cba;border-bottom:1px solid var(--border);box-shadow:0 2px 10px rgba(0,0,0,.25);backdrop-filter:blur(6px)}
   .topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:1400px;margin:0 auto}
-  .brand{display:flex;align-items:center;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px;cursor:pointer;transition:opacity .2s;}
+  .brand:hover{opacity:0.8;}
   .brand-logo{height:22px;filter:brightness(1.2) contrast(1.05)}
   h1{margin:0;font-size:16px;font-weight:700;letter-spacing:.2px}
   .sub{color:#a9b2c2;font-size:12px}
@@ -108,15 +109,8 @@
     display:flex;flex-direction:column;gap:10px;
     transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .2s ease, filter .2s ease;
     opacity:1; filter:none;
-    --mouse-x:50%; --mouse-y:50%; --spot-color: var(--spotlight);
   }
   .tool:hover{ box-shadow:0 14px 32px rgba(0,0,0,.45); transform:translateY(-1px); border-color:#3b82f6; }
-  .tool::before{
-    content:''; position:absolute; inset:0;
-    background: radial-gradient(220px circle at var(--mouse-x) var(--mouse-y), var(--spot-color), transparent 65%);
-    opacity:0; transition:opacity .25s ease; pointer-events:none;
-  }
-  .tool:hover::before{ opacity:.75; }
 
   .tool-head{display:flex;align-items:center;gap:12px}
   .title{font-weight:700;font-size:15px}
@@ -131,13 +125,13 @@
   /* Landing overlay */
   #aiLanding{
     position:fixed;inset:0;
-    background:var(--bg);
+    background:transparent;
     display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;padding:16px;
     overflow:hidden;
   }
   body.has-landing{overflow:hidden;}
-  body.has-landing header{display:none;}
-  body.has-landing main{display:none;}
+  body.has-landing .wrap{display:none;}
+  body.has-landing #filtersBtn{display:none;}
   .logo-chip { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border-radius:16px;
     background:rgba(230, 230, 230, 0.92); box-shadow:0 8px 28px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
   .logo-chip img { filter:brightness(1.3) contrast(1.1); height:32px; }
@@ -224,12 +218,12 @@
   <!-- Top bar -->
   <header>
     <div class="topbar">
+      <button id="filtersBtn" class="btn">Filters</button>
       <div class="brand">
         <img src="logos/clario.png" alt="Clario" class="brand-logo">
         <h1>Legal-Tech Explorer</h1>
       </div>
       <span class="spacer"></span>
-      <button id="filtersBtn" class="btn">Filters</button>
     </div>
   </header>
 
@@ -250,6 +244,7 @@
       <div class="toolbar">
         <div class="col-title">Results</div>
         <div style="display:flex;align-items:center;gap:12px">
+          <span class="sub" id="searchQuery"></span>
           <span class="sub" id="count"></span>
         </div>
       </div>
@@ -455,6 +450,7 @@
   var toolsEl = document.getElementById('tools');
   var detailsEl = document.getElementById('details');
   var countEl = document.getElementById('count');
+  var searchQueryEl = document.getElementById('searchQuery');
   var rightTitle = document.getElementById('rightTitle');
   var rightBody = document.getElementById('rightBody');
   var compareBox = document.getElementById('compareBox');
@@ -467,6 +463,7 @@
   var __filtersListenerAttached = false;
 
   var HAS_SEARCHED = false; // hide list until first search/CSV
+  var LAST_QUERY = ''; // Track the last search query
 
   var ALLOWED_FILTER_KEYS = [
     'Regions Served','Legal Functionality – Main Category','Primary User Segment',
@@ -601,28 +598,20 @@
     return out;
   }
 
-  /* spotlight tracking */
-  function attachSpotlight(card){
-    let raf = null, px = 0, py = 0;
-    card.addEventListener('mousemove', (e)=>{
-      const rect = card.getBoundingClientRect();
-      px = e.clientX - rect.left;
-      py = e.clientY - rect.top;
-      if(raf) return;
-      raf = requestAnimationFrame(()=>{
-        card.style.setProperty('--mouse-x', px + 'px');
-        card.style.setProperty('--mouse-y', py + 'px');
-        raf = null;
-      });
-    });
-  }
-
   function renderList(rows){
     const container = toolsEl;
     if(!HAS_SEARCHED){
       countEl.textContent = '0 tools';
+      searchQueryEl.textContent = '';
       container.innerHTML = '';
       return;
+    }
+
+    // Show search query if it exists
+    if(LAST_QUERY){
+      searchQueryEl.textContent = 'Results for: "' + LAST_QUERY + '"';
+    } else {
+      searchQueryEl.textContent = '';
     }
 
     countEl.textContent = rows.length + ' tools';
@@ -641,8 +630,16 @@
       var head = document.createElement('div'); head.className='tool-head';
       head.appendChild(makeLogoEl(rec['Vendor Name']||rec['Vendor']||''));
       var titleWrap = document.createElement('div');
+
+      // Build meta line with conditional dots
+      var metaParts = [];
+      if(rec['Vendor Name']) metaParts.push(esc(rec['Vendor Name']));
+      if(rec['HQ']) metaParts.push('<span>'+esc(rec['HQ'])+'</span>');
+      if(url) metaParts.push('<a href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>');
+      var metaLine = metaParts.join(' • ');
+
       titleWrap.innerHTML = '<div class="title">'+esc(rec.__display_name||rec['Product Name']||rec['Vendor Name']||'Unnamed')+'</div>'+
-                            '<div class="meta">'+esc(rec['Vendor Name']||'')+' • <span>'+esc(rec['HQ']||'')+'</span> '+(url?('• <a href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>'):'')+'</div>';
+                            '<div class="meta">'+metaLine+'</div>';
       head.appendChild(titleWrap);
 
       var desc = document.createElement('div'); desc.className='desc'; desc.textContent = rec['Product Description']||'';
@@ -655,8 +652,6 @@
 
       card.appendChild(head); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
       frag.appendChild(card);
-
-      attachSpotlight(card);
     });
 
     container.appendChild(frag);
@@ -944,6 +939,16 @@
   }
 
   // Header buttons
+  document.querySelector('.brand').addEventListener('click', function(){
+    // Return to landing page
+    document.getElementById('aiLanding').style.display='flex';
+    document.body.classList.add('has-landing');
+    document.getElementById('aiStatus').textContent = '';
+    document.getElementById('aiQuery').value = '';
+    LAST_QUERY = '';
+    HAS_SEARCHED = false;
+    applyFilters();
+  });
   document.getElementById('filtersBtn').onclick=openFilters;
   document.getElementById('closeFilters').onclick=closeFilters;
   document.getElementById('closeRight').onclick=closeRight;
@@ -981,6 +986,7 @@
     const q = aiQuery.value.trim();
     if(!q){ aiStatus.textContent="Please type what you need."; return; }
     aiStatus.textContent="Thinking…";
+    LAST_QUERY = q; // Store the search query
     try{
       const res = await fetch("http://127.0.0.1:8000/query", {
         method:"POST",
@@ -1003,7 +1009,7 @@
       applyFilters();
     }catch(err){
       console.error("Network/Fetch failed:", err);
-      aiStatus.textContent = `Couldn’t reach the AI server: ${err?.message||err}`;
+      aiStatus.textContent = `Couldn't reach the AI server: ${err?.message||err}`;
     }
   }
 
