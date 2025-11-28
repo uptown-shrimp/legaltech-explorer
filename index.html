@@ -50,7 +50,8 @@
   .wrap{
     display:grid;gap:16px;padding:16px;max-width:1400px;margin:0 auto;height:calc(100vh - 64px);
     grid-template-columns:1fr;transition:grid-template-columns .35s ease;overflow:hidden;
-    background:var(--bg);position:relative;z-index:1;
+    background:linear-gradient(to bottom, transparent 0%, transparent 20%, var(--bg) 40%, var(--bg) 100%);
+    position:relative;z-index:1;
   }
   /* default order: left, main, right */
   aside.left{order:1}
