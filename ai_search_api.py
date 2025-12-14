@@ -36,8 +36,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Mount static files (empty directory - not used, all files served from root)
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # =========================
 # Schema your UI understands
