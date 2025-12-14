@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
