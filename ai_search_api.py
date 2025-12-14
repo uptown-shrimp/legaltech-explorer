@@ -317,7 +317,7 @@ def call_openai_json(system_msg: str, user_msg: str) -> Dict[str, Any]:
 # =========================
 @app.get("/")
 def root():
-    return FileResponse("static/index.html")
+    return FileResponse("index.html")
 
 @app.get("/health")
 def health():
