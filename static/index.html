@@ -235,7 +235,7 @@
 
   <!-- AI search overlay -->
   <div id="aiLanding">
-    <div class="logo-chip"><img src="/static/logos/clario.png" alt="Clario"></div>
+    <div class="logo-chip"><img src="logos/clario.png" alt="Clario"></div>
 
     <!-- Static tagline -->
     <div class="static-tagline">A curated explorer of legal tech tools for in house legal teams in Australia</div>
@@ -258,7 +258,7 @@
   <header>
     <div class="topbar">
       <div class="brand">
-        <img src="/static/logos/clario.png" alt="Clario" class="brand-logo">
+        <img src="logos/clario.png" alt="Clario" class="brand-logo">
         <h1>Legal-Tech Explorer</h1>
       </div>
       <span class="spacer"></span>
@@ -320,7 +320,7 @@
     <header>
       <div class="topbar">
         <div class="brand">
-          <img src="/static/logos/clario.png" alt="Clario" class="brand-logo">
+          <img src="logos/clario.png" alt="Clario" class="brand-logo">
           <h1>Compare Tools</h1>
         </div>
         <span class="spacer"></span>
@@ -517,7 +517,7 @@
   }
   function vendorSlug(name){ return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
   function vendorNoSpace(name){ return String(name||'').replace(/\s+/g,''); }
-  function logoCandidates(name){ var a=[], raw=vendorNoSpace(name), slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(ext=>{ a.push('/static/logos/'+raw+'.'+ext); a.push('/static/logos/'+slug+'.'+ext); }); return a; }
+  function logoCandidates(name){ var a=[], raw=vendorNoSpace(name), slug=vendorSlug(name); ['png','jpg','jpeg','webp'].forEach(ext=>{ a.push('logos/'+raw+'.'+ext); a.push('logos/'+slug+'.'+ext); }); return a; }
   function makeLogoEl(name){
     var img=document.createElement('img'); img.className='logo';
     var tries=logoCandidates(name); if(!tries.length){ return initialsBadge(name); }
@@ -1164,7 +1164,7 @@
   }
 
   /* ===== AUTO-IMPORT CSV ON LAUNCH ===== */
-  const AUTO_CSV_URL = '/static/data/merged_pref_top50.csv'; // Render deployment path
+  const AUTO_CSV_URL = 'merged_pref_top50.csv'; // place this CSV next to this HTML file
 
   async function loadCSVFromURL(url){
     try{
@@ -1613,4 +1613,3 @@ void main(){
   </script>
 </body>
 </html>
-<!-- Force deploy Sat, Dec 13, 2025 11:19:40 PM -->
