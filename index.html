@@ -1033,7 +1033,7 @@
         adoptionLevel: rec['Adoption Level']
       }));
 
-      const res = await fetch("http://127.0.0.1:8000/summarize", {
+      const res = await fetch("/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tools: comparisonData })
@@ -1333,7 +1333,7 @@
     aiStatus.textContent="Thinking…";
     LAST_QUERY = q; // Store the search query
     try{
-      const res = await fetch("http://127.0.0.1:8000/query", {
+      const res = await fetch("/query", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body:JSON.stringify({ query:q })
