@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -33,6 +34,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for logos
+app.mount("/logos", StaticFiles(directory="logos"), name="logos")
 
 # =========================
 # Schema your UI understands
@@ -315,6 +319,10 @@ def root():
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
+
+@app.get("/merged_pref_top50.csv")
+def serve_csv():
+    return FileResponse("merged_pref_top50.csv", media_type="text/csv")
 
 @app.get("/health")
 def health():
