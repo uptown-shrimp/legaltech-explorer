@@ -5,7 +5,7 @@ from typing import Any, Dict, List
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -310,11 +310,7 @@ def call_openai_json(system_msg: str, user_msg: str) -> Dict[str, Any]:
 # =========================
 @app.get("/")
 def root():
-    response = FileResponse("index.html")
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
-    return response
+    return RedirectResponse("/docs")
 
 @app.get("/health")
 def health():
