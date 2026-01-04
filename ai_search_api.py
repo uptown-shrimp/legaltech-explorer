@@ -324,6 +324,14 @@ def root():
 def serve_csv():
     return FileResponse("merged_pref_top50.csv", media_type="text/csv")
 
+@app.get("/merged_pref_top50_updated.csv")
+def serve_updated_csv():
+    response = FileResponse("merged_pref_top50_updated.csv", media_type="text/csv")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 @app.get("/health")
 def health():
     return {"ok": True, "has_key": bool(OPENAI_API_KEY), "model": OPENAI_MODEL}
