@@ -37,7 +37,7 @@
   .topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;max-width:1400px;margin:0 auto}
   .brand{display:flex;align-items:center;gap:10px;cursor:pointer;transition:opacity .2s;}
   .brand:hover{opacity:0.8;}
-  .brand-logo{height:22px;filter:brightness(1.2) contrast(1.05);background:rgba(230, 230, 230, 0.92);padding:4px 8px;border-radius:8px;}
+  .brand-logo{height:22px;filter:brightness(1.3) drop-shadow(0 0 8px rgba(255,255,255,0.6)) drop-shadow(0 2px 4px rgba(0,0,0,0.3));padding:4px 8px;border-radius:8px;}
   h1{margin:0;font-size:16px;font-weight:700;letter-spacing:.2px}
   .sub{color:#a9b2c2;font-size:12px}
   .spacer{flex:1}
@@ -90,10 +90,11 @@
   body.state-filters aside.left{display:flex}
   body.state-right aside.right{display:flex}
   main{display:flex;flex-direction:column;gap:16px;opacity:1;transition:opacity .25s ease; position:relative; z-index:1}
-  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px;position:sticky;top:0;z-index:10;padding:4px 0;margin-top:-4px;margin-left:-4px;margin-right:-4px;padding-left:4px;padding-right:4px}
   .col-title{font-size:12px;font-weight:800;letter-spacing:.28px;text-transform:uppercase;color:#9aa3b8}
   .box{background:#10121e;border:1px solid var(--border);border-radius:14px;padding:14px;box-shadow:var(--shadow)}
   .box.alt{background:linear-gradient(180deg,#0f1220,#0b0a12);overflow:auto;max-height:100%}
+  aside.left .box, aside.right .box{overflow-y:auto;flex:1;min-height:0}
 
   .tabs{display:flex;gap:6px}
   .tab{background:#0e1220;border:1px solid var(--border);color:#c8d1e6;font-weight:700;padding:6px 10px;border-radius:10px;cursor:pointer}
@@ -120,6 +121,16 @@
     transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .2s ease, filter .2s ease, background .2s ease;
     opacity:1; filter:none;
     box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .aus-flag{
+    position:absolute;
+    top:8px;
+    right:8px;
+    width:20px;
+    height:15px;
+    border-radius:2px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.5);
+    z-index:10;
   }
   .tool::before{
     content:'';
@@ -159,10 +170,10 @@
   .left, main, .right{overflow:auto;outline:none;max-height:calc(100vh - 80px);padding-right:8px}
 
   /* Custom scrollbar styling */
-  .left::-webkit-scrollbar, main::-webkit-scrollbar, .right::-webkit-scrollbar, .compare-wrap::-webkit-scrollbar, #aiSummaryBox::-webkit-scrollbar, .box.alt::-webkit-scrollbar{width:8px}
-  .left::-webkit-scrollbar-track, main::-webkit-scrollbar-track, .right::-webkit-scrollbar-track, .compare-wrap::-webkit-scrollbar-track, #aiSummaryBox::-webkit-scrollbar-track, .box.alt::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:4px}
-  .left::-webkit-scrollbar-thumb, main::-webkit-scrollbar-thumb, .right::-webkit-scrollbar-thumb, .compare-wrap::-webkit-scrollbar-thumb, #aiSummaryBox::-webkit-scrollbar-thumb, .box.alt::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:4px}
-  .left::-webkit-scrollbar-thumb:hover, main::-webkit-scrollbar-thumb:hover, .right::-webkit-scrollbar-thumb:hover, .compare-wrap::-webkit-scrollbar-thumb:hover, #aiSummaryBox::-webkit-scrollbar-thumb:hover, .box.alt::-webkit-scrollbar-thumb:hover{background:var(--scroll-thumb-hover)}
+  .left::-webkit-scrollbar, main::-webkit-scrollbar, .right::-webkit-scrollbar, .compare-wrap::-webkit-scrollbar, #aiSummaryBox::-webkit-scrollbar, .box.alt::-webkit-scrollbar, aside.left .box::-webkit-scrollbar, aside.right .box::-webkit-scrollbar{width:8px}
+  .left::-webkit-scrollbar-track, main::-webkit-scrollbar-track, .right::-webkit-scrollbar-track, .compare-wrap::-webkit-scrollbar-track, #aiSummaryBox::-webkit-scrollbar-track, .box.alt::-webkit-scrollbar-track, aside.left .box::-webkit-scrollbar-track, aside.right .box::-webkit-scrollbar-track{background:var(--scroll-track);border-radius:4px}
+  .left::-webkit-scrollbar-thumb, main::-webkit-scrollbar-thumb, .right::-webkit-scrollbar-thumb, .compare-wrap::-webkit-scrollbar-thumb, #aiSummaryBox::-webkit-scrollbar-thumb, .box.alt::-webkit-scrollbar-thumb, aside.left .box::-webkit-scrollbar-thumb, aside.right .box::-webkit-scrollbar-thumb{background:var(--scroll-thumb);border-radius:4px}
+  .left::-webkit-scrollbar-thumb:hover, main::-webkit-scrollbar-thumb:hover, .right::-webkit-scrollbar-thumb:hover, .compare-wrap::-webkit-scrollbar-thumb:hover, #aiSummaryBox::-webkit-scrollbar-thumb:hover, .box.alt::-webkit-scrollbar-thumb:hover, aside.left .box::-webkit-scrollbar-thumb:hover, aside.right .box::-webkit-scrollbar-thumb:hover{background:var(--scroll-thumb-hover)}
 
   /* Landing overlay */
   #aiLanding{
@@ -170,16 +181,217 @@
     background:transparent;
     display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:10;padding:16px;
     overflow:hidden;
+    margin-top:20px;
   }
   body.has-landing #aiLanding{display:flex;}
   body.has-landing{overflow:hidden;}
   body.has-landing .wrap{display:none;}
   body.has-landing #filtersBtn{display:none;}
   .logo-chip { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border-radius:16px;
-    background:rgba(230, 230, 230, 0.92); box-shadow:0 8px 28px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.15); }
-  .logo-chip img { filter:brightness(1.3) contrast(1.1); height:32px; }
+    box-shadow:0 8px 28px rgba(0,0,0,.5); }
+  .logo-chip img { filter:brightness(1.4) drop-shadow(0 0 12px rgba(255,255,255,0.7)) drop-shadow(0 3px 6px rgba(0,0,0,0.4)); height:32px; }
 
   .landing-actions{display:flex; justify-content:center; gap:8px; width:100%}
+
+  /* Staggered Menu Styles */
+  .menu-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .menu-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .staggered-menu {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: min(280px, 90vw);
+    height: 100vh;
+    background: #f8f9fb;
+    z-index: 101;
+    display: flex;
+    flex-direction: column;
+    padding: 2em 1.5em;
+    transform: translateX(100%);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .staggered-menu.active {
+    transform: translateX(0);
+  }
+
+  .menu-close-btn {
+    position: absolute;
+    top: 2.5em;
+    right: 1.5em;
+    width: 50px;
+    height: 50px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: filter 0.3s ease;
+  }
+  .menu-close-btn:before,
+  .menu-close-btn:after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 2px;
+    background: #111;
+    transition: transform 0.3s ease;
+    left: 15px;
+    top: 24px;
+  }
+  .menu-close-btn:before {
+    transform: rotate(45deg);
+  }
+  .menu-close-btn:after {
+    transform: rotate(-45deg);
+  }
+  .menu-close-btn:hover {
+    filter: brightness(1.5);
+  }
+  .menu-close-btn:hover:before {
+    transform: rotate(45deg) scale(1.1);
+  }
+  .menu-close-btn:hover:after {
+    transform: rotate(-45deg) scale(1.1);
+  }
+
+  .menu-items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .menu-item {
+    position: relative;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(30px) rotate(3deg);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .menu-item.reveal {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+
+  .menu-item-link {
+    display: inline-block;
+    color: #111;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    letter-spacing: -0.3px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: color 0.25s ease;
+    position: relative;
+    padding-right: 2em;
+  }
+
+  /* Popularity breakdown styles */
+  .popularity-breakdown {
+    margin:12px 0;
+    background:#0a0d14;
+    border:1px solid var(--border);
+    border-radius:6px;
+    overflow:hidden;
+  }
+  .popularity-breakdown-header {
+    padding:10px 12px;
+    background:#0f1220;
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-weight:600;
+    user-select:none;
+  }
+  .popularity-breakdown-header:hover {
+    background:#14182a;
+  }
+  .popularity-breakdown-toggle {
+    font-size:12px;
+    color:#666;
+  }
+  .popularity-breakdown-content {
+    max-height:0;
+    overflow:hidden;
+    transition:max-height 0.3s ease;
+  }
+  .popularity-breakdown-content.expanded {
+    max-height:500px;
+  }
+  .popularity-breakdown-item {
+    padding:8px 12px;
+    border-top:1px solid var(--border);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:13px;
+  }
+  .popularity-breakdown-label {
+    color:#9aa3b8;
+  }
+  .popularity-breakdown-value {
+    color:#fff;
+    font-weight:600;
+  }
+  .menu-item-link:hover {
+    color: var(--accent);
+  }
+  .menu-item-link:after {
+    content: attr(data-index);
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .menu-item.reveal .menu-item-link:after {
+    opacity: 1;
+  }
+
+  .menu-footer {
+    margin-top: auto;
+    padding-top: 2rem;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity 0.5s ease 0.4s, transform 0.5s ease 0.4s;
+  }
+  .menu-footer.reveal {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .menu-footer-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--accent);
+    margin: 0 0 0.75rem 0;
+  }
+
+  .menu-footer-text {
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.5;
+  }
 
   /* Landing text styles */
   .static-tagline{font-size:14px; font-weight:500; color:#9aa3b8; line-height:1.4; text-align:center; max-width:600px; margin-bottom:8px;}
@@ -235,6 +447,106 @@
     body.state-right.state-compare-full aside.right{order:0}
     aside.left, aside.right{order:2} main{order:1}
   }
+
+  /* Scoring Modal Styles */
+  .scoring-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .scoring-modal.active {
+    display: flex;
+  }
+  .scoring-modal-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+  }
+  .scoring-modal-content {
+    position: relative;
+    background: linear-gradient(135deg, #1a1f35 0%, #111320 100%);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 12px;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+  }
+  .scoring-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 32px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+  }
+  .scoring-modal-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  .scoring-modal h2 {
+    margin: 0 0 20px 0;
+    color: #fff;
+    font-size: 28px;
+    font-weight: 600;
+  }
+  .scoring-modal h3 {
+    margin: 24px 0 12px 0;
+    color: #6366f1;
+    font-size: 20px;
+    font-weight: 600;
+  }
+  .scoring-modal h4 {
+    margin: 16px 0 8px 0;
+    color: #a5b4fc;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .scoring-modal p {
+    margin: 0 0 12px 0;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+  .scoring-modal ul {
+    margin: 0 0 16px 0;
+    padding-left: 24px;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+  .scoring-modal li {
+    margin-bottom: 6px;
+  }
+  .scoring-modal-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  .scoring-modal-content::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+  }
+  .scoring-modal-content::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.5);
+    border-radius: 4px;
+  }
+  .scoring-modal-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
+  }
 </style>
 </head>
 <body class="state-main has-landing">
@@ -244,7 +556,7 @@
 
   <!-- AI search overlay -->
   <div id="aiLanding">
-    <div class="logo-chip"><img src="logos/clario.png" alt="Clario"></div>
+    <div class="logo-chip"><img src="logos/clario_inverse.png" alt="Clario"></div>
 
     <!-- Static tagline -->
     <div class="static-tagline">A curated explorer of legal tech tools for in house legal teams in Australia</div>
@@ -255,26 +567,157 @@
     <textarea id="aiQuery" rows="3" placeholder=""
       style="width:min(620px,86vw);padding:12px;border-radius:12px;border:1px solid var(--border);font-size:14px;resize:none;background:#0f1220;color:#e9eef7;"></textarea>
 
-    <!-- Search button -->
-    <div class="landing-actions">
-      <button id="aiSearchBtn" class="btn primary">Search</button>
-    </div>
-
     <div id="aiStatus" class="sub" style="min-height:18px"></div>
+  </div>
+
+  <!-- Staggered Menu Overlay -->
+  <div id="menuOverlay" class="menu-overlay"></div>
+
+  <!-- Scoring System Modal -->
+  <div id="scoringModal" class="scoring-modal">
+    <div class="scoring-modal-overlay"></div>
+    <div class="scoring-modal-content">
+      <button id="scoringModalClose" class="scoring-modal-close" aria-label="Close">&times;</button>
+      <h2>Popularity Score</h2>
+      <div class="scoring-modal-body">
+        <h3>What the popularity score means</h3>
+        <p>The popularity score is a 0–100 indicator designed to help you quickly understand how established, visible, and well-documented a legal tech tool is in the market.</p>
+        <p>It brings together multiple signals to provide a balanced, comparable view across tools.</p>
+
+        <h3>How the score is calculated</h3>
+        <p>Each tool's popularity score is based on a combination of:</p>
+
+        <h4>Market interest</h4>
+        <p>How often the tool is searched for over the past year.</p>
+
+        <h4>Product maturity</h4>
+        <p>Whether the tool is positioned as a quick-start, intermediate, or enterprise-grade solution.</p>
+
+        <h4>AI capabilities</h4>
+        <p>Whether the tool includes AI-powered functionality.</p>
+
+        <h4>Geographic reach</h4>
+        <p>The regions where the tool is available or actively used.</p>
+
+        <h4>Data completeness</h4>
+        <p>How much verified information is available about the tool.</p>
+
+        <p>Each factor contributes a weighted share to the overall score, which is calculated in advance and updated as new data becomes available.</p>
+
+        <h3>Handling missing information</h3>
+        <p>Not all tools have complete data across every category.</p>
+        <p>When information is unavailable, the score is calculated using the data that is available, rather than penalising the tool. This ensures newer or emerging tools can still be fairly compared.</p>
+
+        <h3>Transparency</h3>
+        <p>You can view a breakdown of the factors contributing to a tool's popularity score by opening its details. This is provided to help you understand why a tool scores the way it does.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- How to Use Modal -->
+  <div id="howToUseModal" class="scoring-modal">
+    <div class="scoring-modal-overlay"></div>
+    <div class="scoring-modal-content">
+      <button id="howToUseModalClose" class="scoring-modal-close" aria-label="Close">&times;</button>
+      <h2>How to Use the Legal-Tech Explorer</h2>
+      <div class="scoring-modal-body">
+        <p>The Legal-Tech Explorer helps in-house legal teams discover and compare legal technology tools available in Australia.</p>
+
+        <h3>1. Getting Started</h3>
+        <p>There are two main ways to find the tools you need:</p>
+
+        <h4>Search using natural language</h4>
+        <p>Describe what you're looking for in plain English (for example: "AI contract automation for in-house teams").</p>
+        <p>Your search automatically applies relevant filters, which you can view and adjust manually at any time.</p>
+
+        <h4>Browse all tools</h4>
+        <p>Select View All Tools to explore the full database without applying filters.</p>
+
+        <p>The total number of tools available is displayed at the top of the page.</p>
+
+        <h3>2. Browsing Tools</h3>
+        <p>Tools are displayed in a grid layout, allowing you to scan and explore available options quickly.</p>
+        <p>Click on any tool to view its details</p>
+        <p>Results update automatically as filters are applied or adjusted</p>
+
+        <h3>3. Filtering Tools</h3>
+        <p>Use the Filters panel to refine your results.</p>
+        <p>A wide range of filters is available, covering areas such as:</p>
+        <p>AI capability</p>
+        <p>Product maturity</p>
+        <p>Adoption level</p>
+        <p>Practice areas</p>
+        <p>Regions served</p>
+        <p>Features and capabilities</p>
+        <p>Additional filter options can be found under the More Filters section.</p>
+        <p>Filters update in real time and remain active as you browse.</p>
+
+        <h3>4. Comparing Tools</h3>
+        <h4>Adding tools to compare</h4>
+        <p>Select tools from the results list to add them to comparison mode.</p>
+
+        <h4>Comparison view</h4>
+        <p>In comparison mode, selected tools are displayed side by side so you can easily compare key attributes.</p>
+
+        <h4>AI comparison summary</h4>
+        <p>Within the comparison view, you can generate an AI-powered summary that:</p>
+        <p>Compares tools against one another</p>
+        <p>Highlights key differences</p>
+        <p>Outlines strengths and limitations</p>
+        <p>Provides high-level suggestions to support decision-making</p>
+
+        <img src="logos/comparison.gif" alt="Comparison feature demonstration" style="width: 100%; max-width: 600px; margin: 20px auto; display: block; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3);">
+      </div>
+    </div>
+  </div>
+
+  <!-- Staggered Menu Panel -->
+  <div id="staggeredMenu" class="staggered-menu">
+    <button id="menuCloseBtn" class="menu-close-btn" aria-label="Close menu"></button>
+
+    <ul class="menu-items">
+      <li class="menu-item">
+        <a href="#" class="menu-item-link" data-index="01" data-action="how-to-use">
+          How to Use
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-item-link" data-index="02" data-action="scoring-system">
+          Scoring System
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-item-link" data-index="03" data-action="view-tools">
+          View All Tools
+        </a>
+      </li>
+      <li class="menu-item">
+        <a href="#" class="menu-item-link" data-index="04" data-action="about-clario">
+          About Clario
+        </a>
+      </li>
+    </ul>
+
+    <div class="menu-footer">
+      <h3 class="menu-footer-title">by Clario</h3>
+      <p class="menu-footer-text">
+        A curated explorer of legal tech tools for in house legal teams in Australia
+      </p>
+    </div>
   </div>
 
   <!-- Top bar -->
   <header>
     <div class="topbar">
       <div class="brand">
-        <img src="logos/clario.png" alt="Clario" class="brand-logo">
+        <img src="logos/clario_inverse.png" alt="Clario" class="brand-logo">
         <h1>Legal-Tech Explorer</h1>
       </div>
       <span class="spacer"></span>
       <button class="btn" id="compareHeaderBtn" style="display:none">
         Compare <span id="compareHeaderCount">(0)</span>
       </button>
-      <button class="btn" id="viewAllBtnHeader" style="margin-left:8px">View All Tools</button>
+      <button class="btn" id="landingMenuBtn" style="margin-left:8px">Menu</button>
     </div>
   </header>
 
@@ -289,7 +732,6 @@
         </div>
       </div>
       <div class="box filters">
-        <div class="sub" style="margin-bottom:6px">Quick & minimal facets</div>
       </div>
     </aside>
 
@@ -329,7 +771,7 @@
     <header>
       <div class="topbar">
         <div class="brand">
-          <img src="logos/clario.png" alt="Clario" class="brand-logo">
+          <img src="logos/clario_inverse.png" alt="Clario" class="brand-logo">
           <h1>Compare Tools</h1>
         </div>
         <span class="spacer"></span>
@@ -14841,7 +15283,7 @@
 
   function buildFilters(){
     CONTROLS = new Map();
-    filtersBox.innerHTML = '<div class="sub" style="margin-bottom:6px">Quick & minimal facets</div>';
+    filtersBox.innerHTML = '';
 
     var quick=document.createElement('div');
     quick.className='filter-field';
@@ -15020,8 +15462,20 @@
 
       var card = document.createElement('div'); card.className='tool reveal-child'; card.dataset.id = rec.__id;
 
+      // Add Australian flag if hosted in Australia (top-left corner)
+      var hostingLocation = rec['Hosting Location'] || '';
+      if(hostingLocation.toLowerCase().includes('australia')) {
+        var flag = document.createElement('img');
+        flag.src = 'logos/ausflag.png';
+        flag.className = 'aus-flag';
+        flag.alt = 'Australia';
+        flag.title = 'Hosted in Australia';
+        card.appendChild(flag);
+      }
+
       var head = document.createElement('div'); head.className='tool-head';
       head.appendChild(makeLogoEl(rec['Vendor Name']||rec['Vendor']||''));
+
       var titleWrap = document.createElement('div');
 
       // Build meta line with conditional dots
@@ -15097,15 +15551,105 @@
     var name=document.createElement('div'); name.innerHTML='<div class="title">'+esc(rec.__display_name||'')+'</div>';
     top.appendChild(name);
 
+    // Add popularity breakdown with DYNAMIC WEIGHT RE-NORMALIZATION
+    var popScore = parseFloat(rec['popularity_score']) || 0;
+
+    // Define base weights for each component
+    var baseWeights = {
+      adoption: 0.30,
+      maturity: 0.20,
+      trends: 0.25,
+      ai: 0.10,
+      regions: 0.08,
+      completeness: 0.07
+    };
+
+    // Calculate component base scores (0-100)
+    var adoptionMap = {
+      'Market Leader / Standard':100,
+      'Mainstream / Proven':75,
+      'Growing Adoption':50,
+      'Emerging / Niche':25,
+      'Limited / Specialized':10
+    };
+    var adoptionBase = adoptionMap[rec['Adoption Level']]||null;
+
+    var maturityMap = {
+      'Enterprise-grade':100,
+      'Enterprise-Grade':100,
+      'Advanced':75,
+      'Intermediate':50,
+      'Quick Win':25
+    };
+    var maturityBase = maturityMap[rec['Maturity Entry Level']]||null;
+
+    var aiBase = (rec['AI Powered']==='Yes'||rec['AI Powered']==='Core Feature'?100:0);
+
+    var regionCount = rec['Regions Served']?(rec['Regions Served'].split(',').length):0;
+    var regionBase = regionCount > 0 ? Math.min(regionCount * 20, 100) : null;
+
+    var completeness = Object.keys(rec).filter(k=>rec[k]&&!/^_/.test(k)).length / Object.keys(rec).length;
+    var completenessBase = completeness > 0 ? completeness * 100 : null;
+
+    // Google Trends: ALWAYS included, defaults to 0 if no data (never null)
+    var trendsBase = parseFloat(rec['google_trends_score']) || 0;
+
+    // Build array of available components with their data
+    var components = [];
+    if(adoptionBase !== null) components.push({name:'Adoption Level', base:adoptionBase, baseWeight:baseWeights.adoption});
+    if(maturityBase !== null) components.push({name:'Maturity', base:maturityBase, baseWeight:baseWeights.maturity});
+    components.push({name:'Google Trends', base:trendsBase, baseWeight:baseWeights.trends}); // Always included (0 if no data)
+    components.push({name:'AI-Powered', base:aiBase, baseWeight:baseWeights.ai}); // Always included
+    if(regionBase !== null) components.push({name:'Regions Served', base:regionBase, baseWeight:baseWeights.regions});
+    if(completenessBase !== null) components.push({name:'Data Completeness', base:completenessBase, baseWeight:baseWeights.completeness});
+
+    // Calculate total available weight
+    var totalAvailableWeight = components.reduce(function(sum, c){ return sum + c.baseWeight; }, 0);
+
+    // Re-normalize weights to sum to 100%
+    components.forEach(function(c){
+      c.normalizedWeight = (c.baseWeight / totalAvailableWeight);
+      c.weightPercent = (c.normalizedWeight * 100).toFixed(0);
+    });
+
+    // Build breakdown HTML
+    var breakdownItems = '';
+    components.forEach(function(c){
+      breakdownItems += '<div class="popularity-breakdown-item">'+
+        '<span class="popularity-breakdown-label">'+c.name+' ('+c.weightPercent+'%)</span>'+
+        '<span class="popularity-breakdown-value">'+c.base.toFixed(0)+'/100</span>'+
+        '</div>';
+    });
+
+    var breakdown = document.createElement('div');
+    breakdown.className = 'popularity-breakdown';
+    breakdown.innerHTML = '<div class="popularity-breakdown-header"><span>Popularity Score: '+popScore.toFixed(0)+'</span><span class="popularity-breakdown-toggle">▼</span></div>'+
+      '<div class="popularity-breakdown-content">'+breakdownItems+'</div>';
+
     var rows='';
     Object.keys(rec).forEach(function(k){
       if(/^_/.test(k) || /^__/.test(k)) return;
       if(k === 'Vendor Contact Details') return;  // Skip contact details
+      if(k === 'popularity_score') return;  // Skip, shown in breakdown
       var v=rec[k]; if(v==null || v==='') return;
       var val=esc(v); if(/^https?:\/\//i.test(String(v))) val='<a href="'+v+'" target="_blank" rel="noopener">'+esc(v)+'</a>';
       rows+='<tr><th style="text-align:left;padding:6px 10px;background:#0f1220;border:1px solid var(--border)">'+esc(k)+'</th><td style="padding:6px 10px;background:#0f1220;border:1px solid var(--border)">'+val+'</td></tr>';
     });
-    details.innerHTML=''; details.appendChild(top);
+    details.innerHTML=''; details.appendChild(top); details.appendChild(breakdown);
+
+    // Add click handler for breakdown toggle
+    breakdown.querySelector('.popularity-breakdown-header').addEventListener('click', function(){
+      var content = breakdown.querySelector('.popularity-breakdown-content');
+      var toggle = breakdown.querySelector('.popularity-breakdown-toggle');
+      if(content.classList.contains('expanded')){
+        content.classList.remove('expanded');
+        toggle.textContent = '▼';
+      } else {
+        content.classList.add('expanded');
+        toggle.textContent = '▲';
+      }
+    });
+
     var tbl=document.createElement('table'); tbl.style.width='100%'; tbl.style.borderCollapse='separate'; tbl.style.borderSpacing='0 8px'; tbl.innerHTML=rows; details.appendChild(tbl);
   }
 
@@ -15617,6 +16161,68 @@
     applyFilters();
   }
 
+  // Staggered Menu functionality
+  const menuBtn = document.getElementById('landingMenuBtn');
+  const menuOverlay = document.getElementById('menuOverlay');
+  const staggeredMenu = document.getElementById('staggeredMenu');
+  const menuCloseBtn = document.getElementById('menuCloseBtn');
+  const menuItems = document.querySelectorAll('.menu-item');
+
+  function openMenu() {
+    menuOverlay.style.opacity = '1';
+    menuOverlay.style.pointerEvents = 'auto';
+    staggeredMenu.style.transform = 'translateX(0)';
+
+    // Stagger the reveal of menu items
+    menuItems.forEach((item, index) => {
+      setTimeout(() => {
+        item.classList.add('reveal');
+      }, index * 80); // 80ms stagger delay
+    });
+  }
+
+  function closeMenu() {
+    menuOverlay.style.opacity = '0';
+    menuOverlay.style.pointerEvents = 'none';
+    staggeredMenu.style.transform = 'translateX(100%)';
+
+    // Remove reveal class from all items
+    menuItems.forEach(item => {
+      item.classList.remove('reveal');
+    });
+  }
+
+  menuBtn?.addEventListener('click', openMenu);
+  menuCloseBtn?.addEventListener('click', closeMenu);
+  menuOverlay?.addEventListener('click', closeMenu);
+
+  // Handle menu item clicks
+  document.querySelectorAll('.menu-item-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const action = this.getAttribute('data-action');
+
+      // Handle different menu actions
+      if (action === 'view-tools') {
+        closeMenu();
+        viewAllTools();
+      } else if (action === 'about-clario') {
+        window.open('https://clario.com.au/about-us/', '_blank');
+        closeMenu();
+      } else if (action === 'scoring-system') {
+        closeMenu();
+        openScoringModal();
+      } else if (action === 'how-to-use') {
+        closeMenu();
+        openHowToUseModal();
+      } else {
+        // For now, just log the action (placeholder for future implementation)
+        console.log('Menu action:', action);
+      }
+    });
+  });
+
+  // View All Tools button listener
   document.getElementById('viewAllBtnHeader')?.addEventListener('click', viewAllTools);
 
   // Show differences checkbox listener
@@ -15644,6 +16250,44 @@
       });
     }
   });
+
+  // Scoring Modal functions
+  function openScoringModal() {
+    const modal = document.getElementById('scoringModal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+  }
+
+  function closeScoringModal() {
+    const modal = document.getElementById('scoringModal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  // Scoring Modal event listeners
+  document.getElementById('scoringModalClose')?.addEventListener('click', closeScoringModal);
+  document.querySelector('.scoring-modal-overlay')?.addEventListener('click', closeScoringModal);
+
+  // How to Use Modal functions
+  function openHowToUseModal() {
+    const modal = document.getElementById('howToUseModal');
+    if (modal) {
+      modal.classList.add('active');
+    }
+  }
+
+  function closeHowToUseModal() {
+    const modal = document.getElementById('howToUseModal');
+    if (modal) {
+      modal.classList.remove('active');
+    }
+  }
+
+  // How to Use Modal event listeners
+  document.getElementById('howToUseModalClose')?.addEventListener('click', closeHowToUseModal);
+  document.querySelectorAll('.scoring-modal-overlay')[1]?.addEventListener('click', closeHowToUseModal);
 
   // Init
   document.body.classList.add('has-landing'); // Add landing class on load
