@@ -15919,18 +15919,21 @@
   }
 
   /* ===== AUTO-IMPORT CSV ON LAUNCH ===== */
-  const AUTO_CSV_URL = 'merged_pref_top50_updated.csv'; // Updated database with 361 tools
+  const AUTO_CSV_URL = 'merged_pref_top50_updated.csv?v=' + Date.now(); // Updated database with 361 tools
 
   async function loadCSVFromURL(url){
     try{
+      console.log('Loading CSV from:', url);
       const res = await fetch(url, { cache: 'no-store' });
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const text = await res.text();
+      console.log('CSV loaded, length:', text.length);
 
       // keep overlay UX by default (preload silently):
       const parsed = Papa.parse(text,{ header:true, skipEmptyLines:true });
       if(parsed.errors?.length){ console.warn('CSV parse warnings:', parsed.errors.slice(0,3)); }
       DATA = normalizeRows(parsed.data);
+      console.log('DATA loaded, records:', DATA.length);
       buildFilters();
 
       // Try to restore previous state
