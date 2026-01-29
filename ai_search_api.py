@@ -79,15 +79,6 @@ def check_rate_limit(user_email: str) -> bool:
     rate_limit_store[user_email].append(now)
     return True
 
-async def rate_limit_dependency(user: dict = Depends(require_auth)):
-    """Dependency to enforce rate limiting on authenticated endpoints"""
-    if not check_rate_limit(user['email']):
-        raise HTTPException(
-            status_code=429,
-            detail=f"Rate limit exceeded. Maximum {RATE_LIMIT_REQUESTS} requests per {RATE_LIMIT_WINDOW} seconds."
-        )
-    return user
-
 # =========================
 # Schema your UI understands
 # =========================
@@ -230,6 +221,15 @@ async def require_admin(user: dict = Depends(require_auth)):
     """Dependency that requires admin role"""
     if user.get('role') != 'admin':
         raise HTTPException(status_code=403, detail="Admin access required")
+    return user
+
+async def rate_limit_dependency(user: dict = Depends(require_auth)):
+    """Dependency to enforce rate limiting on authenticated endpoints"""
+    if not check_rate_limit(user['email']):
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded. Maximum {RATE_LIMIT_REQUESTS} requests per {RATE_LIMIT_WINDOW} seconds."
+        )
     return user
 
 # =========================
