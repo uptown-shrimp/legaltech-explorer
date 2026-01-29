@@ -696,6 +696,16 @@
           About Clario
         </a>
       </li>
+      <li class="menu-item" id="signInMenuItem">
+        <a href="#" class="menu-item-link" data-index="05" data-action="sign-in">
+          Sign In
+        </a>
+      </li>
+      <li class="menu-item" id="signOutMenuItem" style="display: none;">
+        <a href="#" class="menu-item-link" data-index="06" data-action="sign-out">
+          Sign Out
+        </a>
+      </li>
     </ul>
 
     <div class="menu-footer">
@@ -16218,6 +16228,12 @@
       } else if (action === 'how-to-use') {
         closeMenu();
         openHowToUseModal();
+      } else if (action === 'sign-in') {
+        closeMenu();
+        openLoginModal();
+      } else if (action === 'sign-out') {
+        closeMenu();
+        logout();
       } else {
         // For now, just log the action (placeholder for future implementation)
         console.log('Menu action:', action);
@@ -16469,5 +16485,544 @@ void main(){
       mountAurora();
     }
   </script>
+
+  <!-- ============================================ -->
+  <!-- Authentication UI Components                 -->
+  <!-- ============================================ -->
+
+  <style>
+    /* Auth Modal Styles */
+    .auth-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 20000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-modal.active {
+      display: flex;
+    }
+
+    .auth-modal-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      backdrop-filter: blur(8px);
+    }
+
+    .auth-modal-content {
+      position: relative;
+      background: linear-gradient(135deg, #1a1f35 0%, #111320 100%);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 12px;
+      max-width: 450px;
+      width: 100%;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      z-index: 1;
+    }
+
+    .auth-modal-close {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-size: 32px;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background 0.2s ease;
+    }
+
+    .auth-modal-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .auth-modal h2 {
+      margin: 0 0 10px 0;
+      color: #fff;
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .auth-modal .subtitle {
+      margin: 0 0 30px 0;
+      color: #9aa3b8;
+      font-size: 14px;
+    }
+
+    .auth-form-group {
+      margin-bottom: 20px;
+    }
+
+    .auth-form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #cbd5e1;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .auth-form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 8px;
+      color: #fff;
+      font-size: 14px;
+      transition: border-color 0.3s ease, background 0.3s ease;
+    }
+
+    .auth-form-group input:focus {
+      outline: none;
+      border-color: rgba(99, 102, 241, 0.6);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .auth-submit-btn {
+      width: 100%;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .auth-submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .auth-submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .auth-submit-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .auth-error {
+      margin-top: 15px;
+      padding: 12px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      color: #fca5a5;
+      font-size: 14px;
+    }
+
+    .auth-success {
+      margin-top: 15px;
+      padding: 12px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 8px;
+      color: #86efac;
+      font-size: 14px;
+    }
+
+    .auth-link {
+      margin-top: 20px;
+      text-align: center;
+      color: #9aa3b8;
+      font-size: 14px;
+    }
+
+    .auth-link a {
+      color: #6366f1;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .auth-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* User menu button */
+    .user-menu-btn {
+      margin-left: 8px;
+      padding: 8px 16px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 6px;
+      color: #6366f1;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .user-menu-btn:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: rgba(99, 102, 241, 0.5);
+    }
+  </style>
+
+  <!-- Login Modal -->
+  <div id="loginModal" class="auth-modal">
+    <div class="auth-modal-overlay"></div>
+    <div class="auth-modal-content">
+      <button id="loginModalClose" class="auth-modal-close" aria-label="Close">&times;</button>
+      <h2>Sign In</h2>
+      <p class="subtitle">Access the Legal-Tech Explorer</p>
+
+      <form id="loginForm">
+        <div class="auth-form-group">
+          <label for="loginEmail">Email</label>
+          <input type="email" id="loginEmail" name="email" required autocomplete="email">
+        </div>
+
+        <div class="auth-form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" name="password" required autocomplete="current-password">
+        </div>
+
+        <button type="submit" class="auth-submit-btn" id="loginSubmitBtn">Sign In</button>
+
+        <div id="loginError" class="auth-error" style="display: none;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Register Modal -->
+  <div id="registerModal" class="auth-modal">
+    <div class="auth-modal-overlay"></div>
+    <div class="auth-modal-content">
+      <button id="registerModalClose" class="auth-modal-close" aria-label="Close">&times;</button>
+      <h2>Create Account</h2>
+      <p class="subtitle" id="registerSubtitle">Set up your account</p>
+
+      <form id="registerForm">
+        <div class="auth-form-group">
+          <label for="registerEmail">Email</label>
+          <input type="email" id="registerEmail" name="email" required readonly>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="registerPassword">Password</label>
+          <input type="password" id="registerPassword" name="password" required autocomplete="new-password" minlength="8">
+          <small style="color: #9aa3b8; font-size: 12px; margin-top: 4px; display: block;">
+            Minimum 8 characters
+          </small>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="registerPasswordConfirm">Confirm Password</label>
+          <input type="password" id="registerPasswordConfirm" name="passwordConfirm" required autocomplete="new-password" minlength="8">
+        </div>
+
+        <button type="submit" class="auth-submit-btn" id="registerSubmitBtn">Create Account</button>
+
+        <div id="registerError" class="auth-error" style="display: none;"></div>
+        <div id="registerSuccess" class="auth-success" style="display: none;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Authentication JavaScript -->
+  <script>
+    // Global auth state
+    window.AUTH_STATE = {
+      user: null,
+      authenticated: false
+    };
+
+    // Check authentication status on page load
+    async function checkAuthStatus() {
+      try {
+        const response = await fetch('/auth/me');
+        const data = await response.json();
+
+        if (data.authenticated) {
+          window.AUTH_STATE = {
+            user: data.user,
+            authenticated: true
+          };
+          updateUIForAuthenticatedUser();
+        } else {
+          updateUIForAnonymousUser();
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        updateUIForAnonymousUser();
+      }
+    }
+
+    function updateUIForAuthenticatedUser() {
+      const user = window.AUTH_STATE.user;
+
+      // Add user menu button to header if it doesn't exist
+      const header = document.querySelector('header .wrap');
+      let userMenuBtn = document.getElementById('userMenuBtn');
+
+      if (!userMenuBtn && header) {
+        userMenuBtn = document.createElement('button');
+        userMenuBtn.id = 'userMenuBtn';
+        userMenuBtn.className = 'user-menu-btn';
+        header.appendChild(userMenuBtn);
+      }
+
+      if (userMenuBtn) {
+        userMenuBtn.textContent = user.email;
+        userMenuBtn.onclick = showUserMenu;
+      }
+
+      // Hide "Sign In" menu item, show "Sign Out"
+      const signInMenuItem = document.getElementById('signInMenuItem');
+      if (signInMenuItem) {
+        signInMenuItem.style.display = 'none';
+      }
+
+      const signOutMenuItem = document.getElementById('signOutMenuItem');
+      if (signOutMenuItem) {
+        signOutMenuItem.style.display = '';
+      }
+    }
+
+    function updateUIForAnonymousUser() {
+      // Remove user menu button if it exists
+      const userMenuBtn = document.getElementById('userMenuBtn');
+      if (userMenuBtn) {
+        userMenuBtn.remove();
+      }
+
+      // Show "Sign In" menu item, hide "Sign Out"
+      const signInMenuItem = document.getElementById('signInMenuItem');
+      if (signInMenuItem) {
+        signInMenuItem.style.display = '';
+      }
+
+      const signOutMenuItem = document.getElementById('signOutMenuItem');
+      if (signOutMenuItem) {
+        signOutMenuItem.style.display = 'none';
+      }
+    }
+
+    function showUserMenu() {
+      // Simple logout for now - you can expand this to a dropdown menu
+      if (confirm('Sign out?')) {
+        logout();
+      }
+    }
+
+    // Login modal functions
+    function openLoginModal() {
+      document.getElementById('loginModal').classList.add('active');
+      document.getElementById('loginEmail').focus();
+    }
+
+    function closeLoginModal() {
+      document.getElementById('loginModal').classList.remove('active');
+      document.getElementById('loginForm').reset();
+      document.getElementById('loginError').style.display = 'none';
+    }
+
+    // Register modal functions
+    function openRegisterModal(email, token) {
+      document.getElementById('registerEmail').value = email;
+      document.getElementById('registerForm').dataset.token = token;
+      document.getElementById('registerModal').classList.add('active');
+      document.getElementById('registerPassword').focus();
+    }
+
+    function closeRegisterModal() {
+      document.getElementById('registerModal').classList.remove('active');
+      document.getElementById('registerForm').reset();
+      document.getElementById('registerError').style.display = 'none';
+      document.getElementById('registerSuccess').style.display = 'none';
+    }
+
+    // Login form submission
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('loginSubmitBtn');
+      const errorDiv = document.getElementById('loginError');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in...';
+      errorDiv.style.display = 'none';
+
+      const formData = new FormData(e.target);
+      const data = {
+        email: formData.get('email'),
+        password: formData.get('password')
+      };
+
+      try {
+        const response = await fetch('/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          window.AUTH_STATE = {
+            user: result.user,
+            authenticated: true
+          };
+          closeLoginModal();
+          updateUIForAuthenticatedUser();
+
+          // Refresh the page to load user-specific data
+          window.location.reload();
+        } else {
+          errorDiv.textContent = result.detail || 'Login failed';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Register form submission
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('registerSubmitBtn');
+      const errorDiv = document.getElementById('registerError');
+      const successDiv = document.getElementById('registerSuccess');
+
+      const password = document.getElementById('registerPassword').value;
+      const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+
+      if (password !== passwordConfirm) {
+        errorDiv.textContent = 'Passwords do not match';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      const token = e.target.dataset.token;
+
+      try {
+        const response = await fetch('/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          window.AUTH_STATE = {
+            user: result.user,
+            authenticated: true
+          };
+
+          successDiv.textContent = 'Account created successfully! Redirecting...';
+          successDiv.style.display = 'block';
+
+          setTimeout(() => {
+            closeRegisterModal();
+            updateUIForAuthenticatedUser();
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          errorDiv.textContent = result.detail || 'Registration failed';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+      }
+    });
+
+    // Logout function
+    async function logout() {
+      try {
+        await fetch('/auth/logout', { method: 'POST' });
+        window.AUTH_STATE = { user: null, authenticated: false };
+        window.location.href = '/';
+      } catch (error) {
+        console.error('Logout failed:', error);
+      }
+    }
+
+    // Modal close button handlers - only allow closing if authenticated
+    document.getElementById('loginModalClose').addEventListener('click', () => {
+      if (window.AUTH_STATE.authenticated) {
+        closeLoginModal();
+      }
+    });
+    document.querySelector('#loginModal .auth-modal-overlay').addEventListener('click', () => {
+      if (window.AUTH_STATE.authenticated) {
+        closeLoginModal();
+      }
+    });
+    document.getElementById('registerModalClose').addEventListener('click', () => {
+      if (window.AUTH_STATE.authenticated) {
+        closeRegisterModal();
+      }
+    });
+    document.querySelector('#registerModal .auth-modal-overlay').addEventListener('click', () => {
+      if (window.AUTH_STATE.authenticated) {
+        closeRegisterModal();
+      }
+    });
+
+    // Check for invite token in URL
+    window.addEventListener('DOMContentLoaded', async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token');
+
+      if (token) {
+        // Check if invite is valid
+        try {
+          const response = await fetch(`/auth/check-invite/${token}`);
+          const data = await response.json();
+
+          if (data.valid) {
+            openRegisterModal(data.email, token);
+          } else {
+            alert('Invalid or expired invite link');
+            window.location.href = '/';
+          }
+        } catch (error) {
+          alert('Error validating invite');
+          window.location.href = '/';
+        }
+      } else {
+        // Check auth status
+        await checkAuthStatus();
+
+        // If not authenticated, show login modal immediately
+        if (!window.AUTH_STATE.authenticated) {
+          openLoginModal();
+        }
+      }
+    });
+  </script>
+
 </body>
 </html>

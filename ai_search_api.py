@@ -1,15 +1,25 @@
 # ai_search_api.py
 import os
 import json
-from typing import Any, Dict, List
+import time
+from collections import defaultdict
+from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Cookie, Request, Response, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
+
+# Import authentication models
+from auth_models import (
+    create_user, authenticate_user, create_invite, validate_invite,
+    mark_invite_used, create_session, validate_session, delete_session,
+    get_user_by_email, cleanup_expired_sessions, log_usage,
+    get_user_stats, get_all_users_stats, set_user_status
+)
 
 # =========================
 # Boot + OpenAI client
@@ -37,6 +47,46 @@ app.add_middleware(
 
 # Mount static files for logos
 app.mount("/logos", StaticFiles(directory="logos"), name="logos")
+
+# =========================
+# Rate Limiting
+# =========================
+# Store request timestamps per user: {user_email: [timestamp1, timestamp2, ...]}
+rate_limit_store: Dict[str, List[float]] = defaultdict(list)
+
+# Rate limit configuration
+RATE_LIMIT_REQUESTS = 20  # Number of requests allowed
+RATE_LIMIT_WINDOW = 60    # Time window in seconds (1 minute)
+
+def check_rate_limit(user_email: str) -> bool:
+    """
+    Check if user has exceeded rate limit.
+    Returns True if within limit, False if exceeded.
+    """
+    now = time.time()
+
+    # Clean up old timestamps outside the window
+    rate_limit_store[user_email] = [
+        ts for ts in rate_limit_store[user_email]
+        if now - ts < RATE_LIMIT_WINDOW
+    ]
+
+    # Check if user has exceeded the limit
+    if len(rate_limit_store[user_email]) >= RATE_LIMIT_REQUESTS:
+        return False
+
+    # Add current timestamp
+    rate_limit_store[user_email].append(now)
+    return True
+
+async def rate_limit_dependency(user: dict = Depends(require_auth)):
+    """Dependency to enforce rate limiting on authenticated endpoints"""
+    if not check_rate_limit(user['email']):
+        raise HTTPException(
+            status_code=429,
+            detail=f"Rate limit exceeded. Maximum {RATE_LIMIT_REQUESTS} requests per {RATE_LIMIT_WINDOW} seconds."
+        )
+    return user
 
 # =========================
 # Schema your UI understands
@@ -142,6 +192,45 @@ class Query(BaseModel):
 
 class ComparisonRequest(BaseModel):
     tools: List[Dict[str, Any]]
+
+# =========================
+# Authentication Models
+# =========================
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+class RegisterRequest(BaseModel):
+    token: str
+    password: str
+
+class InviteRequest(BaseModel):
+    email: str
+    role: str = "user"
+    client_id: Optional[str] = None
+
+# =========================
+# Authentication Dependency
+# =========================
+async def get_current_user(session_id: Optional[str] = Cookie(None)):
+    """Dependency to get current authenticated user"""
+    if not session_id:
+        return None
+
+    user = validate_session(session_id)
+    return user
+
+async def require_auth(user: Optional[dict] = Depends(get_current_user)):
+    """Dependency that requires authentication"""
+    if not user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return user
+
+async def require_admin(user: dict = Depends(require_auth)):
+    """Dependency that requires admin role"""
+    if user.get('role') != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return user
 
 # =========================
 # Helpers
@@ -312,20 +401,215 @@ def call_openai_json(system_msg: str, user_msg: str) -> Dict[str, Any]:
 # =========================
 # Routes
 # =========================
+
+# =========================
+# Authentication Routes
+# =========================
+
+# Helper function for cookie settings
+def get_cookie_secure():
+    """Return True if running in production (HTTPS), False for development (HTTP)"""
+    return os.getenv("ENVIRONMENT", "development") == "production"
+
+@app.post("/auth/login")
+async def login(req: LoginRequest, response: Response):
+    """Login endpoint - authenticates user and sets session cookie"""
+    user = authenticate_user(req.email, req.password)
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Create session
+    session_id = create_session(user['id'])
+
+    # Set secure HTTP-only cookie
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        secure=get_cookie_secure(),  # HTTPS only in production
+        samesite="lax",
+        max_age=86400  # 24 hours
+    )
+
+    return {
+        "success": True,
+        "user": {
+            "email": user['email'],
+            "role": user['role']
+        }
+    }
+
+@app.post("/auth/register")
+async def register(req: RegisterRequest, response: Response):
+    """Register with invite token"""
+    # Validate invite
+    invite = validate_invite(req.token)
+
+    if not invite:
+        raise HTTPException(status_code=400, detail="Invalid or expired invite")
+
+    # Check if user already exists
+    existing_user = get_user_by_email(invite['email'])
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    # Create user
+    user_id = create_user(
+        email=invite['email'],
+        password=req.password,
+        role=invite['role'],
+        client_id=invite['client_id']
+    )
+
+    if not user_id:
+        raise HTTPException(status_code=500, detail="Failed to create user")
+
+    # Mark invite as used
+    mark_invite_used(req.token)
+
+    # Get the created user
+    user = get_user_by_email(invite['email'])
+
+    # Create session
+    session_id = create_session(user['id'])
+
+    # Set secure HTTP-only cookie
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        httponly=True,
+        secure=get_cookie_secure(),
+        samesite="lax",
+        max_age=86400
+    )
+
+    return {
+        "success": True,
+        "user": {
+            "email": user['email'],
+            "role": user['role']
+        }
+    }
+
+@app.post("/auth/logout")
+async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
+    """Logout endpoint - deletes session"""
+    if session_id:
+        delete_session(session_id)
+
+    response.delete_cookie(key="session_id")
+
+    return {"success": True}
+
+@app.get("/auth/me")
+async def get_me(user: Optional[dict] = Depends(get_current_user)):
+    """Get current user info"""
+    if not user:
+        return {"authenticated": False}
+
+    return {
+        "authenticated": True,
+        "user": {
+            "email": user['email'],
+            "role": user['role'],
+            "client_id": user.get('client_id')
+        }
+    }
+
+@app.get("/auth/check-invite/{token}")
+async def check_invite(token: str):
+    """Check if an invite token is valid"""
+    invite = validate_invite(token)
+
+    if not invite:
+        raise HTTPException(status_code=400, detail="Invalid or expired invite")
+
+    return {
+        "valid": True,
+        "email": invite['email']
+    }
+
+# =========================
+# Admin Routes (Invite Management)
+# =========================
+@app.post("/admin/invite")
+async def create_invite_endpoint(req: InviteRequest, admin: dict = Depends(require_admin)):
+    """Admin endpoint to create invite links"""
+    token = create_invite(
+        email=req.email,
+        role=req.role,
+        client_id=req.client_id
+    )
+
+    # Construct invite URL (adjust domain for production)
+    invite_url = f"/register?token={token}"
+
+    return {
+        "success": True,
+        "token": token,
+        "invite_url": invite_url,
+        "email": req.email
+    }
+
+@app.get("/admin/users")
+async def list_users_endpoint(admin: dict = Depends(require_admin)):
+    """Admin endpoint to list all users with usage statistics"""
+    users = get_all_users_stats()
+    return {"users": users}
+
+@app.get("/admin/users/{email}/stats")
+async def get_user_stats_endpoint(email: str, admin: dict = Depends(require_admin)):
+    """Admin endpoint to get detailed statistics for a specific user"""
+    stats = get_user_stats(email)
+    return stats
+
+class UserStatusRequest(BaseModel):
+    status: str  # 'active' or 'disabled'
+
+@app.post("/admin/users/{email}/status")
+async def set_user_status_endpoint(email: str, req: UserStatusRequest, admin: dict = Depends(require_admin)):
+    """Admin endpoint to enable or disable a user account"""
+    if req.status not in ['active', 'disabled']:
+        raise HTTPException(status_code=400, detail="Status must be 'active' or 'disabled'")
+
+    success = set_user_status(email, req.status)
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "success": True,
+        "email": email,
+        "status": req.status
+    }
+
+# =========================
+# Public Routes
+# =========================
 @app.get("/")
-def root():
+async def root(user: Optional[dict] = Depends(get_current_user)):
+    """Serve index.html - with optional authentication"""
     response = FileResponse("index.html")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
     return response
 
+@app.get("/login.html")
+async def login_page():
+    """Serve login page"""
+    response = FileResponse("login.html")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 @app.get("/merged_pref_top50.csv")
-def serve_csv():
+def serve_csv(user: dict = Depends(require_auth)):
     return FileResponse("merged_pref_top50.csv", media_type="text/csv")
 
 @app.get("/merged_pref_top50_updated.csv")
-def serve_updated_csv():
+def serve_updated_csv(user: dict = Depends(require_auth)):
     response = FileResponse("merged_pref_top50_updated.csv", media_type="text/csv")
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
@@ -337,7 +621,7 @@ def health():
     return {"ok": True, "has_key": bool(OPENAI_API_KEY), "model": OPENAI_MODEL}
 
 @app.post("/query")
-async def generate_filters(req: Query):
+async def generate_filters(req: Query, user: dict = Depends(rate_limit_dependency)):
     system_msg = (
         "You map natural-language legal-tech needs into structured filters for a database.\n"
         "Return ONLY a single JSON object (no markdown, no prose) using these EXACT field names when applicable:\n"
@@ -376,6 +660,9 @@ async def generate_filters(req: Query):
     user_msg = f"User query:\n{req.query}\n\nReturn only the JSON object with filters."
 
     try:
+        # Log the query
+        log_usage(user['id'], user['email'], '/query', req.query)
+
         model_obj = call_openai_json(system_msg, user_msg)
         clean = normalize_to_schema(model_obj)
         return clean
@@ -383,7 +670,7 @@ async def generate_filters(req: Query):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 @app.post("/summarize")
-async def summarize_comparison(req: ComparisonRequest):
+async def summarize_comparison(req: ComparisonRequest, user: dict = Depends(rate_limit_dependency)):
     """
     Generate an AI summary comparing multiple legal tech tools.
     """
@@ -418,6 +705,10 @@ async def summarize_comparison(req: ComparisonRequest):
     user_msg = f"Compare these legal tech tools:{tools_text}\n\nProvide a comparison summary in JSON format."
 
     try:
+        # Log the comparison request
+        tool_names = [t.get('name', 'Unknown') for t in req.tools]
+        log_usage(user['id'], user['email'], '/summarize', f"Comparing: {', '.join(tool_names)}")
+
         result = call_openai_json(system_msg, user_msg)
         if isinstance(result, dict) and 'summary' in result:
             return {"summary": result['summary']}
