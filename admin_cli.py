@@ -8,8 +8,12 @@ Usage:
     python admin_cli.py create-user user@example.com password123
 """
 import sys
+import os
 import argparse
 from auth_models import create_invite, create_user, get_user_by_email
+
+# Get base URL from environment or use default
+BASE_URL = os.environ.get('BASE_URL', 'https://legaltech-explorer.onrender.com')
 
 def create_invite_cmd(email: str, role: str = "user", client_id: str = None):
     """Create an invite link"""
@@ -22,7 +26,7 @@ def create_invite_cmd(email: str, role: str = "user", client_id: str = None):
         print(f"  Client ID: {client_id}")
     print(f"\n  Token: {token}")
     print(f"\n  Invite URL:")
-    print(f"  https://your-domain.com/register?token={token}")
+    print(f"  {BASE_URL}?token={token}")
     print(f"\n  This invite will expire in 72 hours.\n")
 
 def create_admin_cmd(email: str, password: str):
