@@ -121,6 +121,7 @@
     transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, opacity .2s ease, filter .2s ease, background .2s ease;
     opacity:1; filter:none;
     box-shadow:0 2px 8px rgba(0,0,0,.3);
+    cursor:pointer;
   }
   .aus-flag{
     position:absolute;
@@ -15563,10 +15564,16 @@
       setTimeout(()=>{ el.classList.add('revealed'); }, 40*i);
     });
 
-    Array.prototype.forEach.call(container.querySelectorAll('.btn-details'), function(btn){
-      btn.addEventListener('click', function(e){
-        var id=e.target.closest('.tool').dataset.id;
-        var rec=DATA.find(function(r){return r.__id===id;});
+    // Click anywhere on card opens details (except compare button)
+    Array.prototype.forEach.call(container.querySelectorAll('.tool'), function(card){
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', function(e){
+        // Don't open details if clicking on compare button or links
+        if(e.target.closest('.btn-compare') || e.target.closest('a')){
+          return;
+        }
+        var id = card.dataset.id;
+        var rec = DATA.find(function(r){return r.__id===id;});
         SELECTED_ID = id;
         renderDetails(rec);
         openRight('details');
@@ -15579,6 +15586,7 @@
     });
     Array.prototype.forEach.call(container.querySelectorAll('.btn-compare'), function(btn){
       btn.addEventListener('click', function(e){
+        e.stopPropagation(); // Prevent card click
         var id=e.target.closest('.tool').dataset.id;
         toggleCompare(id);
         applyFilters();
