@@ -16776,6 +16776,35 @@ void main(){
     </div>
   </div>
 
+  <!-- Reset Password Modal -->
+  <div id="resetPasswordModal" class="auth-modal">
+    <div class="auth-modal-overlay"></div>
+    <div class="auth-modal-content">
+      <h2>Set New Password</h2>
+      <p class="subtitle">Enter your new password below</p>
+
+      <form id="resetPasswordForm">
+        <div class="auth-form-group">
+          <label for="resetNewPassword">New Password</label>
+          <input type="password" id="resetNewPassword" name="password" required autocomplete="new-password" minlength="8">
+          <small style="color: #9aa3b8; font-size: 12px; margin-top: 4px; display: block;">
+            Minimum 8 characters
+          </small>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="resetConfirmPassword">Confirm Password</label>
+          <input type="password" id="resetConfirmPassword" name="confirmPassword" required autocomplete="new-password" minlength="8">
+        </div>
+
+        <button type="submit" class="auth-submit-btn" id="resetPasswordSubmitBtn">Update Password</button>
+
+        <div id="resetPasswordError" class="auth-error" style="display: none;"></div>
+        <div id="resetPasswordSuccess" class="auth-success" style="display: none;"></div>
+      </form>
+    </div>
+  </div>
+
   <!-- Authentication JavaScript -->
   <script>
     // Global auth state
@@ -16941,6 +16970,19 @@ void main(){
       document.getElementById('registerForm').reset();
       document.getElementById('registerError').style.display = 'none';
       document.getElementById('registerSuccess').style.display = 'none';
+    }
+
+    // Reset password modal functions
+    function openResetPasswordModal() {
+      document.getElementById('resetPasswordModal').classList.add('active');
+      document.getElementById('resetNewPassword').focus();
+    }
+
+    function closeResetPasswordModal() {
+      document.getElementById('resetPasswordModal').classList.remove('active');
+      document.getElementById('resetPasswordForm').reset();
+      document.getElementById('resetPasswordError').style.display = 'none';
+      document.getElementById('resetPasswordSuccess').style.display = 'none';
     }
 
     // Login form submission
@@ -17118,6 +17160,67 @@ void main(){
       }
     });
 
+    // Reset password form submission
+    document.getElementById('resetPasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('resetPasswordSubmitBtn');
+      const errorDiv = document.getElementById('resetPasswordError');
+      const successDiv = document.getElementById('resetPasswordSuccess');
+
+      const password = document.getElementById('resetNewPassword').value;
+      const confirmPassword = document.getElementById('resetConfirmPassword').value;
+
+      if (password !== confirmPassword) {
+        errorDiv.textContent = 'Passwords do not match';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      if (password.length < 8) {
+        errorDiv.textContent = 'Password must be at least 8 characters';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Updating password...';
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      try {
+        const response = await fetch('/auth/update-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAccessToken()}`
+          },
+          body: JSON.stringify({ password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          successDiv.textContent = 'Password updated successfully! Redirecting...';
+          successDiv.style.display = 'block';
+
+          setTimeout(() => {
+            closeResetPasswordModal();
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          errorDiv.textContent = result.detail || 'Failed to update password';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Update Password';
+      }
+    });
+
     // Logout function
     async function logout() {
       try {
@@ -17168,8 +17271,8 @@ void main(){
 
         if (type === 'recovery') {
           // Password reset flow - show password update modal
-          alert('Please set your new password');
-          // For now, just log them in - they can change password later
+          openResetPasswordModal();
+          return;  // Don't proceed with normal auth flow
         }
 
         // Check auth status with new token

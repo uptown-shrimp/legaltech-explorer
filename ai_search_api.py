@@ -16,7 +16,7 @@ from openai import OpenAI
 # Import Supabase authentication
 from supabase_auth import (
     sign_in, sign_out, get_user_from_token, refresh_session,
-    request_password_reset, admin_create_user, admin_invite_user,
+    request_password_reset, update_password, admin_create_user, admin_invite_user,
     admin_list_users, is_configured as supabase_configured
 )
 
@@ -546,6 +546,32 @@ async def forgot_password(req: LoginRequest):
 
     # Always return success to prevent email enumeration
     return {"success": True, "message": "If an account exists, a reset email has been sent"}
+
+class UpdatePasswordRequest(BaseModel):
+    password: str
+
+@app.post("/auth/update-password")
+async def update_password_endpoint(
+    req: UpdatePasswordRequest,
+    access_token: Optional[str] = Cookie(None),
+    authorization: Optional[str] = Header(None)
+):
+    """Update user's password (requires valid recovery session)"""
+    # Get token from cookie or header
+    token = access_token
+    if not token and authorization:
+        if authorization.startswith("Bearer "):
+            token = authorization[7:]
+
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+
+    result = update_password(token, req.password)
+
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return {"success": True, "message": "Password updated successfully"}
 
 # =========================
 # Admin Routes (User Management via Supabase)

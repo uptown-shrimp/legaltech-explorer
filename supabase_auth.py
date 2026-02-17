@@ -181,36 +181,57 @@ def request_password_reset(email: str, redirect_url: str) -> dict:
     Returns: {"success": True} or {"error": "..."}
     """
     if not supabase:
+        print("[Auth] Password reset failed: Supabase not configured")
         return {"error": "Supabase not configured"}
 
     try:
+        print(f"[Auth] Requesting password reset for {email}, redirect to {redirect_url}")
         supabase.auth.reset_password_email(
             email,
             options={"redirect_to": redirect_url}
         )
+        print(f"[Auth] Password reset email sent successfully to {email}")
         return {"success": True}
     except Exception as e:
+        print(f"[Auth] Password reset error: {e}")
         return {"error": str(e)}
 
 
 def update_password(access_token: str, new_password: str) -> dict:
     """
-    Update user's password (requires valid session)
+    Update user's password (requires valid session from recovery flow)
     Returns: {"success": True} or {"error": "..."}
     """
     if not supabase:
         return {"error": "Supabase not configured"}
 
     try:
-        # This requires the user to be authenticated
-        response = supabase.auth.update_user({
-            "password": new_password
-        })
+        # Set the session with the recovery access token
+        # The recovery token from email link is a valid session
+        user = supabase.auth.get_user(access_token)
 
-        if response.user:
-            return {"success": True}
-        return {"error": "Failed to update password"}
+        if not user or not user.user:
+            return {"error": "Invalid or expired session"}
+
+        # Update password using the admin client for reliability
+        if supabase_admin:
+            response = supabase_admin.auth.admin.update_user_by_id(
+                user.user.id,
+                {"password": new_password}
+            )
+            if response.user:
+                return {"success": True}
+            return {"error": "Failed to update password"}
+        else:
+            # Fallback to regular update (may not work without proper session)
+            response = supabase.auth.update_user({
+                "password": new_password
+            })
+            if response.user:
+                return {"success": True}
+            return {"error": "Failed to update password"}
     except Exception as e:
+        print(f"[Auth] Password update error: {e}")
         return {"error": str(e)}
 
 
