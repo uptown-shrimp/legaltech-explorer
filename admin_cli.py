@@ -6,11 +6,12 @@ Usage:
     python admin_cli.py create-invite email@example.com --role admin
     python admin_cli.py create-admin admin@example.com password123
     python admin_cli.py create-user user@example.com password123
+    python admin_cli.py reset-password user@example.com newpassword123
 """
 import sys
 import os
 import argparse
-from auth_models import create_invite, create_user, get_user_by_email
+from auth_models import create_invite, create_user, get_user_by_email, reset_password
 
 # Get base URL from environment or use default
 BASE_URL = os.environ.get('BASE_URL', 'https://legaltech-explorer.onrender.com')
@@ -66,6 +67,23 @@ def create_user_cmd(email: str, password: str):
         print(f"✗ Error: Failed to create user")
         sys.exit(1)
 
+def reset_password_cmd(email: str, new_password: str):
+    """Reset a user's password"""
+    existing = get_user_by_email(email)
+    if not existing:
+        print(f"✗ Error: User with email {email} not found")
+        sys.exit(1)
+
+    success = reset_password(email=email, new_password=new_password)
+
+    if success:
+        print(f"\n✓ Password reset successfully!")
+        print(f"  Email: {email}")
+        print(f"\n  User can now login with the new password.\n")
+    else:
+        print(f"✗ Error: Failed to reset password")
+        sys.exit(1)
+
 def main():
     parser = argparse.ArgumentParser(description="Admin CLI for Legal-Tech Explorer")
     subparsers = parser.add_subparsers(dest="command", help="Command to run")
@@ -86,6 +104,11 @@ def main():
     user_parser.add_argument("email", help="User email address")
     user_parser.add_argument("password", help="User password")
 
+    # Reset password command
+    reset_parser = subparsers.add_parser("reset-password", help="Reset a user's password")
+    reset_parser.add_argument("email", help="User email address")
+    reset_parser.add_argument("password", help="New password")
+
     args = parser.parse_args()
 
     if args.command == "create-invite":
@@ -94,6 +117,8 @@ def main():
         create_admin_cmd(args.email, args.password)
     elif args.command == "create-user":
         create_user_cmd(args.email, args.password)
+    elif args.command == "reset-password":
+        reset_password_cmd(args.email, args.password)
     else:
         parser.print_help()
 
