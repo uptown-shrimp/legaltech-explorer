@@ -16805,6 +16805,35 @@ void main(){
     </div>
   </div>
 
+  <!-- Set Password Modal (for invite links) -->
+  <div id="setPasswordModal" class="auth-modal">
+    <div class="auth-modal-overlay"></div>
+    <div class="auth-modal-content">
+      <h2>Welcome!</h2>
+      <p class="subtitle">Set your password to complete registration</p>
+
+      <form id="setPasswordForm">
+        <div class="auth-form-group">
+          <label for="setNewPassword">Password</label>
+          <input type="password" id="setNewPassword" name="password" required autocomplete="new-password" minlength="8">
+          <small style="color: #9aa3b8; font-size: 12px; margin-top: 4px; display: block;">
+            Minimum 8 characters
+          </small>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="setConfirmPassword">Confirm Password</label>
+          <input type="password" id="setConfirmPassword" name="confirmPassword" required autocomplete="new-password" minlength="8">
+        </div>
+
+        <button type="submit" class="auth-submit-btn" id="setPasswordSubmitBtn">Complete Registration</button>
+
+        <div id="setPasswordError" class="auth-error" style="display: none;"></div>
+        <div id="setPasswordSuccess" class="auth-success" style="display: none;"></div>
+      </form>
+    </div>
+  </div>
+
   <!-- Authentication JavaScript -->
   <script>
     // Global auth state
@@ -16983,6 +17012,19 @@ void main(){
       document.getElementById('resetPasswordForm').reset();
       document.getElementById('resetPasswordError').style.display = 'none';
       document.getElementById('resetPasswordSuccess').style.display = 'none';
+    }
+
+    // Set password modal functions (for invite links)
+    function openSetPasswordModal() {
+      document.getElementById('setPasswordModal').classList.add('active');
+      document.getElementById('setNewPassword').focus();
+    }
+
+    function closeSetPasswordModal() {
+      document.getElementById('setPasswordModal').classList.remove('active');
+      document.getElementById('setPasswordForm').reset();
+      document.getElementById('setPasswordError').style.display = 'none';
+      document.getElementById('setPasswordSuccess').style.display = 'none';
     }
 
     // Login form submission
@@ -17221,6 +17263,67 @@ void main(){
       }
     });
 
+    // Set password form submission (for invite links)
+    document.getElementById('setPasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('setPasswordSubmitBtn');
+      const errorDiv = document.getElementById('setPasswordError');
+      const successDiv = document.getElementById('setPasswordSuccess');
+
+      const password = document.getElementById('setNewPassword').value;
+      const confirmPassword = document.getElementById('setConfirmPassword').value;
+
+      if (password !== confirmPassword) {
+        errorDiv.textContent = 'Passwords do not match';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      if (password.length < 8) {
+        errorDiv.textContent = 'Password must be at least 8 characters';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Setting up account...';
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      try {
+        const response = await fetch('/auth/update-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${getAccessToken()}`
+          },
+          body: JSON.stringify({ password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          successDiv.textContent = 'Account setup complete! Redirecting...';
+          successDiv.style.display = 'block';
+
+          setTimeout(() => {
+            closeSetPasswordModal();
+            window.location.href = '/';
+          }, 1500);
+        } else {
+          errorDiv.textContent = result.detail || 'Failed to set password';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Complete Registration';
+      }
+    });
+
     // Logout function
     async function logout() {
       try {
@@ -17272,6 +17375,12 @@ void main(){
         if (type === 'recovery') {
           // Password reset flow - show password update modal
           openResetPasswordModal();
+          return;  // Don't proceed with normal auth flow
+        }
+
+        if (type === 'invite' || type === 'signup') {
+          // Invite flow - user needs to set their password
+          openSetPasswordModal();
           return;  // Don't proceed with normal auth flow
         }
 
