@@ -547,6 +547,42 @@
   .scoring-modal-content::-webkit-scrollbar-thumb:hover {
     background: rgba(99, 102, 241, 0.7);
   }
+
+  /* Floating Help Button */
+  .floating-help-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: none;
+    color: #fff;
+    font-size: 24px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .floating-help-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 25px rgba(99, 102, 241, 0.5);
+  }
+
+  .floating-help-btn:active {
+    transform: scale(1.05);
+  }
+
+  .floating-help-btn svg {
+    width: 26px;
+    height: 26px;
+  }
 </style>
 </head>
 <body class="state-main has-landing">
@@ -17503,6 +17539,15 @@ void main(){
       }
     });
   </script>
+
+  <!-- Floating Help Button -->
+  <button class="floating-help-btn" onclick="openHowToUseModal()" title="How to Use">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"></circle>
+      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+  </button>
 
 </body>
 </html>
