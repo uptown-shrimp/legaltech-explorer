@@ -538,9 +538,9 @@ async def refresh_token_endpoint(
 @app.post("/auth/forgot-password")
 async def forgot_password(req: LoginRequest):
     """Request password reset email"""
-    # Get the site URL for redirect
+    # Get the site URL for redirect - redirect to main page, frontend handles token
     site_url = os.getenv("SITE_URL", "https://legaltech-explorer.onrender.com")
-    redirect_url = f"{site_url}/reset-password"
+    redirect_url = site_url  # Redirect to main page, not /reset-password
 
     result = request_password_reset(req.email, redirect_url)
 
