@@ -5,7 +5,7 @@ import time
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, Cookie, Request, Response, HTTPException, Depends
+from fastapi import FastAPI, Cookie, Request, Response, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -13,13 +13,15 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
 
-# Import authentication models
-from auth_models import (
-    create_user, authenticate_user, create_invite, validate_invite,
-    mark_invite_used, create_session, validate_session, delete_session,
-    get_user_by_email, cleanup_expired_sessions, log_usage,
-    get_user_stats, get_all_users_stats, set_user_status
+# Import Supabase authentication
+from supabase_auth import (
+    sign_in, sign_out, get_user_from_token, refresh_session,
+    request_password_reset, admin_create_user, admin_invite_user,
+    admin_list_users, is_configured as supabase_configured
 )
+
+# Import usage tracking (still using PostgreSQL)
+from auth_models import log_usage, get_user_stats, get_all_users_stats
 
 # =========================
 # Boot + OpenAI client
@@ -201,14 +203,24 @@ class InviteRequest(BaseModel):
     client_id: Optional[str] = None
 
 # =========================
-# Authentication Dependency
+# Authentication Dependency (Supabase)
 # =========================
-async def get_current_user(session_id: Optional[str] = Cookie(None)):
-    """Dependency to get current authenticated user"""
-    if not session_id:
+async def get_current_user(
+    access_token: Optional[str] = Cookie(None, alias="sb_access_token"),
+    authorization: Optional[str] = Header(None)
+):
+    """Dependency to get current authenticated user from Supabase JWT"""
+    # Try to get token from Authorization header first, then cookie
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ")[1]
+    elif access_token:
+        token = access_token
+
+    if not token:
         return None
 
-    user = validate_session(session_id)
+    user = get_user_from_token(token)
     return user
 
 async def require_auth(user: Optional[dict] = Depends(get_current_user)):
@@ -403,7 +415,7 @@ def call_openai_json(system_msg: str, user_msg: str) -> Dict[str, Any]:
 # =========================
 
 # =========================
-# Authentication Routes
+# Authentication Routes (Supabase)
 # =========================
 
 # Helper function for cookie settings
@@ -413,92 +425,55 @@ def get_cookie_secure():
 
 @app.post("/auth/login")
 async def login(req: LoginRequest, response: Response):
-    """Login endpoint - authenticates user and sets session cookie"""
-    user = authenticate_user(req.email, req.password)
+    """Login endpoint - authenticates user via Supabase"""
+    result = sign_in(req.email, req.password)
 
-    if not user:
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if "error" in result:
+        raise HTTPException(status_code=401, detail=result["error"])
 
-    # Create session
-    session_id = create_session(user['id'])
+    user = result["user"]
+    session = result["session"]
 
-    # Set secure HTTP-only cookie
+    # Set access token as HTTP-only cookie
     response.set_cookie(
-        key="session_id",
-        value=session_id,
-        httponly=True,
-        secure=get_cookie_secure(),  # HTTPS only in production
-        samesite="lax",
-        max_age=86400  # 24 hours
-    )
-
-    return {
-        "success": True,
-        "user": {
-            "email": user['email'],
-            "role": user['role']
-        }
-    }
-
-@app.post("/auth/register")
-async def register(req: RegisterRequest, response: Response):
-    """Register with invite token"""
-    # Validate invite
-    invite = validate_invite(req.token)
-
-    if not invite:
-        raise HTTPException(status_code=400, detail="Invalid or expired invite")
-
-    # Check if user already exists
-    existing_user = get_user_by_email(invite['email'])
-    if existing_user:
-        raise HTTPException(status_code=400, detail="User already exists")
-
-    # Create user
-    user_id = create_user(
-        email=invite['email'],
-        password=req.password,
-        role=invite['role'],
-        client_id=invite['client_id']
-    )
-
-    if not user_id:
-        raise HTTPException(status_code=500, detail="Failed to create user")
-
-    # Mark invite as used
-    mark_invite_used(req.token)
-
-    # Get the created user
-    user = get_user_by_email(invite['email'])
-
-    # Create session
-    session_id = create_session(user['id'])
-
-    # Set secure HTTP-only cookie
-    response.set_cookie(
-        key="session_id",
-        value=session_id,
+        key="sb_access_token",
+        value=session["access_token"],
         httponly=True,
         secure=get_cookie_secure(),
         samesite="lax",
-        max_age=86400
+        max_age=3600  # 1 hour (Supabase default)
+    )
+
+    # Set refresh token as HTTP-only cookie
+    response.set_cookie(
+        key="sb_refresh_token",
+        value=session["refresh_token"],
+        httponly=True,
+        secure=get_cookie_secure(),
+        samesite="lax",
+        max_age=86400 * 7  # 7 days
     )
 
     return {
         "success": True,
         "user": {
-            "email": user['email'],
-            "role": user['role']
-        }
+            "email": user["email"],
+            "role": user.get("role", "user")
+        },
+        "access_token": session["access_token"]  # Also return for frontend storage
     }
 
 @app.post("/auth/logout")
-async def logout(response: Response, session_id: Optional[str] = Cookie(None)):
-    """Logout endpoint - deletes session"""
-    if session_id:
-        delete_session(session_id)
+async def logout(
+    response: Response,
+    access_token: Optional[str] = Cookie(None, alias="sb_access_token")
+):
+    """Logout endpoint - clears session cookies"""
+    if access_token:
+        sign_out(access_token)
 
-    response.delete_cookie(key="session_id")
+    response.delete_cookie(key="sb_access_token")
+    response.delete_cookie(key="sb_refresh_token")
 
     return {"success": True}
 
@@ -511,46 +486,116 @@ async def get_me(user: Optional[dict] = Depends(get_current_user)):
     return {
         "authenticated": True,
         "user": {
-            "email": user['email'],
-            "role": user['role'],
-            "client_id": user.get('client_id')
+            "email": user["email"],
+            "role": user.get("role", "user"),
+            "id": user.get("id")
         }
     }
 
-@app.get("/auth/check-invite/{token}")
-async def check_invite(token: str):
-    """Check if an invite token is valid"""
-    invite = validate_invite(token)
+@app.post("/auth/refresh")
+async def refresh_token_endpoint(
+    response: Response,
+    refresh_token: Optional[str] = Cookie(None, alias="sb_refresh_token")
+):
+    """Refresh access token using refresh token"""
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No refresh token")
 
-    if not invite:
-        raise HTTPException(status_code=400, detail="Invalid or expired invite")
+    result = refresh_session(refresh_token)
 
-    return {
-        "valid": True,
-        "email": invite['email']
-    }
+    if "error" in result:
+        # Clear invalid cookies
+        response.delete_cookie(key="sb_access_token")
+        response.delete_cookie(key="sb_refresh_token")
+        raise HTTPException(status_code=401, detail=result["error"])
 
-# =========================
-# Admin Routes (Invite Management)
-# =========================
-@app.post("/admin/invite")
-async def create_invite_endpoint(req: InviteRequest, admin: dict = Depends(require_admin)):
-    """Admin endpoint to create invite links"""
-    token = create_invite(
-        email=req.email,
-        role=req.role,
-        client_id=req.client_id
+    session = result["session"]
+
+    # Update cookies with new tokens
+    response.set_cookie(
+        key="sb_access_token",
+        value=session["access_token"],
+        httponly=True,
+        secure=get_cookie_secure(),
+        samesite="lax",
+        max_age=3600
     )
 
-    # Construct invite URL (adjust domain for production)
-    invite_url = f"/register?token={token}"
+    response.set_cookie(
+        key="sb_refresh_token",
+        value=session["refresh_token"],
+        httponly=True,
+        secure=get_cookie_secure(),
+        samesite="lax",
+        max_age=86400 * 7
+    )
 
     return {
         "success": True,
-        "token": token,
-        "invite_url": invite_url,
-        "email": req.email
+        "access_token": session["access_token"]
     }
+
+@app.post("/auth/forgot-password")
+async def forgot_password(req: LoginRequest):
+    """Request password reset email"""
+    # Get the site URL for redirect
+    site_url = os.getenv("SITE_URL", "https://legaltech-explorer.onrender.com")
+    redirect_url = f"{site_url}/reset-password"
+
+    result = request_password_reset(req.email, redirect_url)
+
+    # Always return success to prevent email enumeration
+    return {"success": True, "message": "If an account exists, a reset email has been sent"}
+
+# =========================
+# Admin Routes (User Management via Supabase)
+# =========================
+@app.post("/admin/invite")
+async def create_invite_endpoint(req: InviteRequest, admin: dict = Depends(require_admin)):
+    """Admin endpoint to send invite email via Supabase"""
+    site_url = os.getenv("SITE_URL", "https://legaltech-explorer.onrender.com")
+
+    result = admin_invite_user(
+        email=req.email,
+        role=req.role,
+        redirect_url=site_url
+    )
+
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return {
+        "success": True,
+        "email": req.email,
+        "message": "Invite email sent"
+    }
+
+@app.post("/admin/create-user")
+async def create_user_endpoint(req: LoginRequest, admin: dict = Depends(require_admin)):
+    """Admin endpoint to create user directly with password"""
+    result = admin_create_user(
+        email=req.email,
+        password=req.password,
+        role="user"
+    )
+
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return {
+        "success": True,
+        "user": result["user"]
+    }
+
+@app.get("/admin/users")
+async def list_users_endpoint(admin: dict = Depends(require_admin)):
+    """Admin endpoint to list all users"""
+    result = admin_list_users()
+
+    if "error" in result:
+        raise HTTPException(status_code=500, detail=result["error"])
+
+    return result
 
 @app.get("/admin/users")
 async def list_users_endpoint(admin: dict = Depends(require_admin)):

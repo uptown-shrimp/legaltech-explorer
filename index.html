@@ -16169,6 +16169,25 @@
   function viewAllTools(){
     HAS_SEARCHED = true;
     LAST_QUERY = '';
+
+    // Clear the AI search input
+    if(aiQuery) aiQuery.value = '';
+    if(aiStatus) aiStatus.textContent = '';
+
+    // Reset quick search
+    if(window.q) window.q.value = '';
+
+    // Reset all single select dropdowns
+    document.querySelectorAll('.filters select').forEach(sel => sel.value = '');
+
+    // Reset all multi-select checkboxes
+    document.querySelectorAll('.filters input[type="checkbox"]').forEach(cb => {
+      // Don't uncheck the deduplicate checkbox
+      if(cb.id !== 'dedupeVendor'){
+        cb.checked = false;
+      }
+    });
+
     document.getElementById('aiLanding').style.display = 'none';
     document.body.classList.remove('has-landing');
     applyFilters();
@@ -16697,6 +16716,27 @@ void main(){
         <button type="submit" class="auth-submit-btn" id="loginSubmitBtn">Sign In</button>
 
         <div id="loginError" class="auth-error" style="display: none;"></div>
+
+        <div class="auth-link" style="margin-top: 20px;">
+          <a href="#" id="forgotPasswordLink">Forgot your password?</a>
+        </div>
+      </form>
+
+      <!-- Forgot Password Form (hidden by default) -->
+      <form id="forgotPasswordForm" style="display: none;">
+        <div class="auth-form-group">
+          <label for="forgotEmail">Email</label>
+          <input type="email" id="forgotEmail" name="email" required autocomplete="email">
+        </div>
+
+        <button type="submit" class="auth-submit-btn" id="forgotSubmitBtn">Send Reset Link</button>
+
+        <div id="forgotError" class="auth-error" style="display: none;"></div>
+        <div id="forgotSuccess" class="auth-success" style="display: none;"></div>
+
+        <div class="auth-link" style="margin-top: 20px;">
+          <a href="#" id="backToLoginLink">Back to Sign In</a>
+        </div>
       </form>
     </div>
   </div>
@@ -16741,27 +16781,81 @@ void main(){
     // Global auth state
     window.AUTH_STATE = {
       user: null,
-      authenticated: false
+      authenticated: false,
+      accessToken: null
     };
+
+    // Store access token in memory for API calls
+    function setAccessToken(token) {
+      window.AUTH_STATE.accessToken = token;
+      // Also store in sessionStorage for page refreshes
+      if (token) {
+        sessionStorage.setItem('sb_access_token', token);
+      } else {
+        sessionStorage.removeItem('sb_access_token');
+      }
+    }
+
+    function getAccessToken() {
+      return window.AUTH_STATE.accessToken || sessionStorage.getItem('sb_access_token');
+    }
 
     // Check authentication status on page load
     async function checkAuthStatus() {
       try {
-        const response = await fetch('/auth/me');
+        const response = await fetch('/auth/me', {
+          credentials: 'include'  // Include cookies
+        });
         const data = await response.json();
 
         if (data.authenticated) {
           window.AUTH_STATE = {
             user: data.user,
-            authenticated: true
+            authenticated: true,
+            accessToken: getAccessToken()
           };
           updateUIForAuthenticatedUser();
         } else {
-          updateUIForAnonymousUser();
+          // Try to refresh token
+          const refreshResult = await tryRefreshToken();
+          if (!refreshResult) {
+            updateUIForAnonymousUser();
+          }
         }
       } catch (error) {
         console.error('Auth check failed:', error);
         updateUIForAnonymousUser();
+      }
+    }
+
+    // Try to refresh the access token
+    async function tryRefreshToken() {
+      try {
+        const response = await fetch('/auth/refresh', {
+          method: 'POST',
+          credentials: 'include'
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAccessToken(data.access_token);
+          // Re-check auth status with new token
+          const meResponse = await fetch('/auth/me', { credentials: 'include' });
+          const meData = await meResponse.json();
+          if (meData.authenticated) {
+            window.AUTH_STATE = {
+              user: meData.user,
+              authenticated: true,
+              accessToken: data.access_token
+            };
+            updateUIForAuthenticatedUser();
+            return true;
+          }
+        }
+        return false;
+      } catch (error) {
+        console.error('Token refresh failed:', error);
+        return false;
       }
     }
 
@@ -16870,15 +16964,20 @@ void main(){
         const response = await fetch('/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(data)
         });
 
         const result = await response.json();
 
         if (response.ok) {
+          // Store access token
+          setAccessToken(result.access_token);
+
           window.AUTH_STATE = {
             user: result.user,
-            authenticated: true
+            authenticated: true,
+            accessToken: result.access_token
           };
           closeLoginModal();
           updateUIForAuthenticatedUser();
@@ -16895,6 +16994,67 @@ void main(){
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Sign In';
+      }
+    });
+
+    // Forgot password link handler
+    document.getElementById('forgotPasswordLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('forgotPasswordForm').style.display = 'block';
+      document.querySelector('#loginModal h2').textContent = 'Reset Password';
+      document.querySelector('#loginModal .subtitle').textContent = 'Enter your email to receive a reset link';
+    });
+
+    // Back to login link handler
+    document.getElementById('backToLoginLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('forgotPasswordForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.querySelector('#loginModal h2').textContent = 'Sign In';
+      document.querySelector('#loginModal .subtitle').textContent = 'Access the Legal-Tech Explorer';
+      document.getElementById('forgotError').style.display = 'none';
+      document.getElementById('forgotSuccess').style.display = 'none';
+    });
+
+    // Forgot password form submission
+    document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('forgotSubmitBtn');
+      const errorDiv = document.getElementById('forgotError');
+      const successDiv = document.getElementById('forgotSuccess');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      const email = document.getElementById('forgotEmail').value;
+
+      try {
+        const response = await fetch('/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: '' })  // password not needed but required by schema
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          successDiv.textContent = 'If an account exists with this email, you will receive a password reset link.';
+          successDiv.style.display = 'block';
+          document.getElementById('forgotPasswordForm').reset();
+        } else {
+          errorDiv.textContent = result.detail || 'Failed to send reset email';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Send Reset Link';
       }
     });
 
@@ -16991,35 +17151,53 @@ void main(){
       }
     });
 
-    // Check for invite token in URL
+    // Check for Supabase auth tokens in URL (from invite/reset emails)
     window.addEventListener('DOMContentLoaded', async () => {
+      // Check for hash params (Supabase redirects with tokens in hash)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+
+      if (accessToken) {
+        // User came from Supabase email link (invite or password reset)
+        setAccessToken(accessToken);
+
+        // Clear the hash from URL
+        window.history.replaceState(null, '', window.location.pathname);
+
+        if (type === 'recovery') {
+          // Password reset flow - show password update modal
+          alert('Please set your new password');
+          // For now, just log them in - they can change password later
+        }
+
+        // Check auth status with new token
+        await checkAuthStatus();
+
+        if (window.AUTH_STATE.authenticated) {
+          return;  // Successfully authenticated
+        }
+      }
+
+      // Check for old-style invite token (backwards compatibility)
       const urlParams = new URLSearchParams(window.location.search);
       const token = urlParams.get('token');
 
       if (token) {
-        // Check if invite is valid
-        try {
-          const response = await fetch(`/auth/check-invite/${token}`);
-          const data = await response.json();
+        // Old invite system - redirect to Supabase flow
+        // For now, show error and suggest admin re-invite via Supabase
+        alert('This invite link has expired. Please request a new invite.');
+        window.location.href = '/';
+        return;
+      }
 
-          if (data.valid) {
-            openRegisterModal(data.email, token);
-          } else {
-            alert('Invalid or expired invite link');
-            window.location.href = '/';
-          }
-        } catch (error) {
-          alert('Error validating invite');
-          window.location.href = '/';
-        }
-      } else {
-        // Check auth status
-        await checkAuthStatus();
+      // Normal flow - check auth status
+      await checkAuthStatus();
 
-        // If not authenticated, show login modal immediately
-        if (!window.AUTH_STATE.authenticated) {
-          openLoginModal();
-        }
+      // If not authenticated, show login modal immediately
+      if (!window.AUTH_STATE.authenticated) {
+        openLoginModal();
       }
     });
   </script>
