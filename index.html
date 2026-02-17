@@ -15566,7 +15566,6 @@
 
     // Click anywhere on card opens details (except compare button)
     Array.prototype.forEach.call(container.querySelectorAll('.tool'), function(card){
-      card.style.cursor = 'pointer';
       card.addEventListener('click', function(e){
         // Don't open details if clicking on compare button or links
         if(e.target.closest('.btn-compare') || e.target.closest('a')){
@@ -15574,14 +15573,16 @@
         }
         var id = card.dataset.id;
         var rec = DATA.find(function(r){return r.__id===id;});
-        SELECTED_ID = id;
-        renderDetails(rec);
-        openRight('details');
-        if(!document.body.classList.contains('state-right-wide')){
-          document.body.classList.add('state-right-wide');
-          document.getElementById('expandRight').textContent='Collapse';
+        if(rec){
+          SELECTED_ID = id;
+          renderDetails(rec);
+          openRight('details');
+          if(!document.body.classList.contains('state-right-wide')){
+            document.body.classList.add('state-right-wide');
+            document.getElementById('expandRight').textContent='Collapse';
+          }
+          updateDimming();
         }
-        updateDimming();
       });
     });
     Array.prototype.forEach.call(container.querySelectorAll('.btn-compare'), function(btn){
