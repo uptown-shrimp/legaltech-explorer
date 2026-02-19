@@ -112,6 +112,69 @@
 
   #tools.tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:2px}
 
+  /* Ranked Results Layout */
+  .ranked-results-container{display:flex;flex-direction:column;gap:16px;width:100%}
+  .rank-section-top{width:100%}
+  .rank-section-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .rank-section-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+
+  /* Rank badges */
+  .rank-badge{
+    position:absolute;
+    top:8px;
+    left:8px;
+    padding:4px 10px;
+    border-radius:6px;
+    font-size:11px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    z-index:15;
+    box-shadow:0 2px 8px rgba(0,0,0,0.4);
+  }
+  .rank-badge-1{
+    background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color:#1a1a1a;
+    border:1px solid rgba(251,191,36,0.5);
+  }
+  .rank-badge-2{
+    background:linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    color:#fff;
+    border:1px solid rgba(148,163,184,0.5);
+  }
+  .rank-badge-3{
+    background:linear-gradient(135deg, #cd7f32 0%, #b8690c 100%);
+    color:#fff;
+    border:1px solid rgba(205,127,50,0.5);
+  }
+  .rank-badge-4{
+    background:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    color:#fff;
+    border:1px solid rgba(99,102,241,0.5);
+  }
+
+  /* Full-width best match card */
+  .tool.rank-1{
+    border:2px solid rgba(251,191,36,0.5);
+    background:linear-gradient(135deg, #1a1815 0%, #151310 100%);
+    box-shadow:0 4px 20px rgba(251,191,36,0.15);
+  }
+  .tool.rank-1:hover{
+    border-color:rgba(251,191,36,0.8);
+    box-shadow:0 8px 32px rgba(251,191,36,0.25);
+  }
+  .tool.rank-1 .aus-flag{
+    top:8px;
+    right:8px;
+    left:auto;
+  }
+
+  /* Responsive ranked layout */
+  @media (max-width:1200px){
+    .rank-section-row{grid-template-columns:1fr}
+    .rank-section-grid{grid-template-columns:1fr}
+  }
+
   /* Tool cards */
   .tool{
     position:relative; overflow:hidden;
@@ -15464,6 +15527,75 @@
     return out;
   }
 
+  function createToolCard(rec, rank){
+    var url = rec['Vendor Website'] || '';
+    var chosen = compare.indexOf(rec.__id)!==-1;
+    var cats = splitMulti(rec['Legal Functionality']).concat(splitMulti(rec['Functionality Sub-Category']));
+    var chips = cats.map(c=>'<span class="chip" style="padding:2px 8px;font-size:11px">'+esc(c)+'</span>').join(' ');
+
+    var card = document.createElement('div');
+    card.className = 'tool reveal-child' + (rank <= 4 ? ' rank-' + rank : '');
+    card.dataset.id = rec.__id;
+
+    // Add rank badge for top 4 results
+    if(rank >= 1 && rank <= 4){
+      var badge = document.createElement('div');
+      badge.className = 'rank-badge rank-badge-' + rank;
+      if(rank === 1) badge.textContent = '#1 Best Match';
+      else if(rank === 2) badge.textContent = '#2';
+      else if(rank === 3) badge.textContent = '#3';
+      else if(rank === 4) badge.textContent = '#4';
+      card.appendChild(badge);
+    }
+
+    // Add Australian flag if hosted in Australia
+    var hostingLocation = rec['Hosting Location'] || '';
+    if(hostingLocation.toLowerCase().includes('australia')) {
+      var flag = document.createElement('img');
+      flag.src = 'logos/ausflag.png';
+      flag.className = 'aus-flag';
+      flag.alt = 'Australia';
+      flag.title = 'Hosted in Australia';
+      card.appendChild(flag);
+    }
+
+    var head = document.createElement('div'); head.className='tool-head';
+    head.appendChild(makeLogoEl(rec['Vendor Name']||rec['Vendor']||''));
+
+    var titleWrap = document.createElement('div');
+
+    // Build meta line with conditional dots
+    var metaParts = [];
+    if(rec['Vendor Name']) metaParts.push(esc(rec['Vendor Name']));
+    if(rec['HQ']) metaParts.push('<span>'+esc(rec['HQ'])+'</span>');
+    if(url) metaParts.push('<a href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>');
+    var metaLine = metaParts.join(' • ');
+
+    titleWrap.innerHTML = '<div class="title">'+esc(rec.__display_name||rec['Product Name']||rec['Vendor Name']||'Unnamed')+'</div>'+
+                          '<div class="meta">'+metaLine+'</div>';
+    head.appendChild(titleWrap);
+
+    // Add popularity bar
+    var popScore = parseFloat(rec['popularity_score']) || 0;
+    var popBar = document.createElement('div'); popBar.className='popularity-bar';
+    popBar.innerHTML = '<span class="popularity-bar-label">Popularity</span>'+
+                       '<div class="popularity-bar-track"><div class="popularity-bar-fill" style="width:'+popScore+'%"></div></div>'+
+                       '<span class="popularity-score">'+popScore.toFixed(0)+'</span>';
+
+    var desc = document.createElement('div'); desc.className='desc'; desc.textContent = rec['Product Description']||'';
+    var chipRow = document.createElement('div'); chipRow.className='filter-row'; chipRow.innerHTML = chips;
+
+    var act = document.createElement('div'); act.className='actions';
+    var detailsBtn = document.createElement('button'); detailsBtn.className='btn btn-details'; detailsBtn.textContent='Details';
+    var cmpBtn = document.createElement('button'); cmpBtn.className='btn btn-compare';
+    cmpBtn.textContent = chosen ? '✓ Added' : 'Add to compare';
+    if(chosen) cmpBtn.style.background = '#1a4d2e';
+    act.appendChild(detailsBtn); act.appendChild(cmpBtn);
+
+    card.appendChild(head); card.appendChild(popBar); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
+    return card;
+  }
+
   function renderList(rows){
     const container = toolsEl;
     if(!HAS_SEARCHED){
@@ -15499,68 +15631,48 @@
     countEl.textContent = rows.length + ' tools';
     container.innerHTML = '';
 
-    const frag = document.createDocumentFragment();
+    // Create ranked layout container
+    var rankedContainer = document.createElement('div');
+    rankedContainer.className = 'ranked-results-container';
 
-    rows.forEach(function(rec){
-      var url = rec['Vendor Website'] || '';
-      var chosen = compare.indexOf(rec.__id)!==-1;
-      var cats = splitMulti(rec['Legal Functionality']).concat(splitMulti(rec['Functionality Sub-Category']));
-      var chips = cats.map(c=>'<span class="chip" style="padding:2px 8px;font-size:11px">'+esc(c)+'</span>').join(' ');
+    var totalResults = rows.length;
 
-      var card = document.createElement('div'); card.className='tool reveal-child'; card.dataset.id = rec.__id;
+    // Section 1: #1 Best Match (full width)
+    if(totalResults >= 1){
+      var topSection = document.createElement('div');
+      topSection.className = 'rank-section-top';
+      topSection.appendChild(createToolCard(rows[0], 1));
+      rankedContainer.appendChild(topSection);
+    }
 
-      // Add Australian flag if hosted in Australia (top-left corner)
-      var hostingLocation = rec['Hosting Location'] || '';
-      if(hostingLocation.toLowerCase().includes('australia')) {
-        var flag = document.createElement('img');
-        flag.src = 'logos/ausflag.png';
-        flag.className = 'aus-flag';
-        flag.alt = 'Australia';
-        flag.title = 'Hosted in Australia';
-        card.appendChild(flag);
+    // Section 2: #2-#4 in a row (or however many exist between 2-4)
+    if(totalResults >= 2){
+      var rowSection = document.createElement('div');
+      rowSection.className = 'rank-section-row';
+
+      // Add results 2, 3, 4 (indices 1, 2, 3)
+      for(var i = 1; i < Math.min(4, totalResults); i++){
+        rowSection.appendChild(createToolCard(rows[i], i + 1));
       }
+      rankedContainer.appendChild(rowSection);
+    }
 
-      var head = document.createElement('div'); head.className='tool-head';
-      head.appendChild(makeLogoEl(rec['Vendor Name']||rec['Vendor']||''));
+    // Section 3: #5+ in standard grid
+    if(totalResults >= 5){
+      var gridSection = document.createElement('div');
+      gridSection.className = 'rank-section-grid';
 
-      var titleWrap = document.createElement('div');
+      for(var i = 4; i < totalResults; i++){
+        gridSection.appendChild(createToolCard(rows[i], i + 1));
+      }
+      rankedContainer.appendChild(gridSection);
+    }
 
-      // Build meta line with conditional dots
-      var metaParts = [];
-      if(rec['Vendor Name']) metaParts.push(esc(rec['Vendor Name']));
-      if(rec['HQ']) metaParts.push('<span>'+esc(rec['HQ'])+'</span>');
-      if(url) metaParts.push('<a href="'+esc(url)+'" target="_blank" rel="noopener">Open ↗</a>');
-      var metaLine = metaParts.join(' • ');
+    container.appendChild(rankedContainer);
 
-      titleWrap.innerHTML = '<div class="title">'+esc(rec.__display_name||rec['Product Name']||rec['Vendor Name']||'Unnamed')+'</div>'+
-                            '<div class="meta">'+metaLine+'</div>';
-      head.appendChild(titleWrap);
-
-      // Add popularity bar
-      var popScore = parseFloat(rec['popularity_score']) || 0;
-      var popBar = document.createElement('div'); popBar.className='popularity-bar';
-      popBar.innerHTML = '<span class="popularity-bar-label">Popularity</span>'+
-                         '<div class="popularity-bar-track"><div class="popularity-bar-fill" style="width:'+popScore+'%"></div></div>'+
-                         '<span class="popularity-score">'+popScore.toFixed(0)+'</span>';
-
-      var desc = document.createElement('div'); desc.className='desc'; desc.textContent = rec['Product Description']||'';
-      var chipRow = document.createElement('div'); chipRow.className='filter-row'; chipRow.innerHTML = chips;
-
-      var act = document.createElement('div'); act.className='actions';
-      var detailsBtn = document.createElement('button'); detailsBtn.className='btn btn-details'; detailsBtn.textContent='Details';
-      var cmpBtn = document.createElement('button'); cmpBtn.className='btn btn-compare';
-      cmpBtn.textContent = chosen ? '✓ Added' : 'Add to compare';
-      if(chosen) cmpBtn.style.background = '#1a4d2e';
-      act.appendChild(detailsBtn); act.appendChild(cmpBtn);
-
-      card.appendChild(head); card.appendChild(popBar); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
-      frag.appendChild(card);
-    });
-
-    container.appendChild(frag);
-
-    // stagger reveal
-    Array.from(container.children).forEach((el,i)=>{
+    // stagger reveal - collect all tool cards
+    var allCards = container.querySelectorAll('.tool');
+    Array.from(allCards).forEach((el,i)=>{
       setTimeout(()=>{ el.classList.add('revealed'); }, 40*i);
     });
 
