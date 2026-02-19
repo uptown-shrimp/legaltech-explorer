@@ -15632,44 +15632,55 @@
     countEl.textContent = rows.length + ' tools';
     container.innerHTML = '';
 
-    // Create ranked layout container
-    var rankedContainer = document.createElement('div');
-    rankedContainer.className = 'ranked-results-container';
-
     var totalResults = rows.length;
 
-    // Section 1: #1 Best Match (full width)
-    if(totalResults >= 1){
-      var topSection = document.createElement('div');
-      topSection.className = 'rank-section-top';
-      topSection.appendChild(createToolCard(rows[0], 1));
-      rankedContainer.appendChild(topSection);
-    }
+    // Only use ranked layout when there's an active search query
+    // For "View All Tools" (no query), use standard grid layout
+    if(LAST_QUERY && LAST_QUERY.trim() !== ''){
+      // Create ranked layout container
+      var rankedContainer = document.createElement('div');
+      rankedContainer.className = 'ranked-results-container';
 
-    // Section 2: #2-#4 in a row (or however many exist between 2-4)
-    if(totalResults >= 2){
-      var rowSection = document.createElement('div');
-      rowSection.className = 'rank-section-row';
-
-      // Add results 2, 3, 4 (indices 1, 2, 3)
-      for(var i = 1; i < Math.min(4, totalResults); i++){
-        rowSection.appendChild(createToolCard(rows[i], i + 1));
+      // Section 1: #1 Best Match (full width)
+      if(totalResults >= 1){
+        var topSection = document.createElement('div');
+        topSection.className = 'rank-section-top';
+        topSection.appendChild(createToolCard(rows[0], 1));
+        rankedContainer.appendChild(topSection);
       }
-      rankedContainer.appendChild(rowSection);
-    }
 
-    // Section 3: #5+ in standard grid
-    if(totalResults >= 5){
-      var gridSection = document.createElement('div');
-      gridSection.className = 'rank-section-grid';
+      // Section 2: #2-#4 in a row (or however many exist between 2-4)
+      if(totalResults >= 2){
+        var rowSection = document.createElement('div');
+        rowSection.className = 'rank-section-row';
 
-      for(var i = 4; i < totalResults; i++){
-        gridSection.appendChild(createToolCard(rows[i], i + 1));
+        // Add results 2, 3, 4 (indices 1, 2, 3)
+        for(var i = 1; i < Math.min(4, totalResults); i++){
+          rowSection.appendChild(createToolCard(rows[i], i + 1));
+        }
+        rankedContainer.appendChild(rowSection);
       }
-      rankedContainer.appendChild(gridSection);
-    }
 
-    container.appendChild(rankedContainer);
+      // Section 3: #5+ in standard grid
+      if(totalResults >= 5){
+        var gridSection = document.createElement('div');
+        gridSection.className = 'rank-section-grid';
+
+        for(var i = 4; i < totalResults; i++){
+          gridSection.appendChild(createToolCard(rows[i], i + 1));
+        }
+        rankedContainer.appendChild(gridSection);
+      }
+
+      container.appendChild(rankedContainer);
+    } else {
+      // Standard grid layout for "View All Tools" (no ranking badges)
+      const frag = document.createDocumentFragment();
+      rows.forEach(function(rec){
+        frag.appendChild(createToolCard(rec, 0)); // rank 0 = no badge
+      });
+      container.appendChild(frag);
+    }
 
     // stagger reveal - collect all tool cards
     var allCards = container.querySelectorAll('.tool');
