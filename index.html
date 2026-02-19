@@ -176,6 +176,380 @@
     .rank-section-grid{grid-template-columns:1fr}
   }
 
+  /* Shortlist Panel */
+  .results-with-shortlist{
+    display:grid;
+    grid-template-columns:1fr 280px;
+    gap:16px;
+    width:100%;
+  }
+  .results-with-shortlist.no-panel{
+    grid-template-columns:1fr;
+  }
+  .results-column{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+  }
+  .shortlist-panel{
+    position:sticky;
+    top:16px;
+    height:fit-content;
+    max-height:calc(100vh - 120px);
+    background:linear-gradient(135deg, #141621 0%, #12151f 100%);
+    border:1px solid #3a4259;
+    border-radius:14px;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  }
+  .shortlist-panel.is-hidden{display:none}
+  .shortlist-header{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  .shortlist-title{
+    font-size:14px;
+    font-weight:700;
+    color:#fff;
+    letter-spacing:0.3px;
+  }
+  .shortlist-subtitle{
+    font-size:12px;
+    color:#9aa3b8;
+  }
+  .shortlist-items{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:280px;
+    overflow-y:auto;
+  }
+  .shortlist-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(99,102,241,0.2);
+    border-radius:8px;
+    transition:border-color 0.2s ease, background 0.2s ease;
+  }
+  .shortlist-item:hover{
+    border-color:rgba(99,102,241,0.4);
+    background:rgba(255,255,255,0.05);
+  }
+  .shortlist-item-badge{
+    padding:3px 6px;
+    border-radius:4px;
+    font-size:10px;
+    font-weight:700;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .shortlist-item-badge.badge-1{
+    background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color:#1a1a1a;
+  }
+  .shortlist-item-badge.badge-2{
+    background:linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    color:#fff;
+  }
+  .shortlist-item-badge.badge-3{
+    background:linear-gradient(135deg, #cd7f32 0%, #b8690c 100%);
+    color:#fff;
+  }
+  .shortlist-item-info{
+    flex:1;
+    min-width:0;
+  }
+  .shortlist-item-name{
+    font-size:12px;
+    font-weight:600;
+    color:#e2e8f0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .shortlist-item-score{
+    font-size:10px;
+    color:#64748b;
+    margin-top:2px;
+  }
+  .shortlist-actions{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-top:auto;
+    padding-top:8px;
+    border-top:1px solid rgba(255,255,255,0.08);
+  }
+  .shortlist-btn-primary{
+    width:100%;
+    padding:10px 16px;
+    background:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border:none;
+    border-radius:8px;
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .shortlist-btn-primary:hover{
+    transform:translateY(-1px);
+    box-shadow:0 4px 12px rgba(99,102,241,0.4);
+  }
+  .shortlist-btn-primary:active{transform:translateY(0)}
+  .shortlist-btn-secondary{
+    width:100%;
+    padding:8px 12px;
+    background:transparent;
+    border:1px solid rgba(99,102,241,0.3);
+    border-radius:6px;
+    color:#9aa3b8;
+    font-size:12px;
+    cursor:pointer;
+    transition:border-color 0.2s ease, color 0.2s ease;
+  }
+  .shortlist-btn-secondary:hover{
+    border-color:rgba(99,102,241,0.5);
+    color:#c8d1e6;
+  }
+  .shortlist-empty{
+    padding:20px 10px;
+    text-align:center;
+    color:#64748b;
+    font-size:12px;
+  }
+
+  /* Edit Selection Modal */
+  .edit-selection-modal{
+    position:fixed;
+    inset:0;
+    z-index:20000;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .edit-selection-modal.active{display:flex}
+  .edit-selection-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(0,0,0,0.85);
+    backdrop-filter:blur(6px);
+  }
+  .edit-selection-content{
+    position:relative;
+    background:linear-gradient(135deg, #1a1f35 0%, #111320 100%);
+    border:1px solid rgba(99,102,241,0.3);
+    border-radius:12px;
+    max-width:480px;
+    width:100%;
+    max-height:80vh;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    z-index:1;
+  }
+  .edit-selection-header{
+    padding:20px 20px 16px;
+    border-bottom:1px solid rgba(255,255,255,0.08);
+  }
+  .edit-selection-header h3{
+    margin:0 0 4px;
+    font-size:18px;
+    font-weight:600;
+    color:#fff;
+  }
+  .edit-selection-header p{
+    margin:0;
+    font-size:13px;
+    color:#9aa3b8;
+  }
+  .edit-selection-list{
+    flex:1;
+    overflow-y:auto;
+    padding:12px 20px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .edit-selection-item{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:12px;
+    background:rgba(255,255,255,0.03);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:8px;
+    cursor:pointer;
+    transition:border-color 0.2s ease, background 0.2s ease;
+  }
+  .edit-selection-item:hover{
+    background:rgba(255,255,255,0.05);
+    border-color:rgba(99,102,241,0.3);
+  }
+  .edit-selection-item.selected{
+    border-color:rgba(99,102,241,0.5);
+    background:rgba(99,102,241,0.1);
+  }
+  .edit-selection-item.disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+  }
+  .edit-selection-checkbox{
+    width:18px;
+    height:18px;
+    border:2px solid #4a5568;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+    transition:border-color 0.2s ease, background 0.2s ease;
+  }
+  .edit-selection-item.selected .edit-selection-checkbox{
+    background:#6366f1;
+    border-color:#6366f1;
+  }
+  .edit-selection-checkbox svg{
+    width:12px;
+    height:12px;
+    stroke:#fff;
+    stroke-width:3;
+    fill:none;
+    opacity:0;
+    transition:opacity 0.15s ease;
+  }
+  .edit-selection-item.selected .edit-selection-checkbox svg{opacity:1}
+  .edit-selection-item-info{
+    flex:1;
+    min-width:0;
+  }
+  .edit-selection-item-name{
+    font-size:13px;
+    font-weight:500;
+    color:#e2e8f0;
+  }
+  .edit-selection-item-meta{
+    font-size:11px;
+    color:#64748b;
+    margin-top:2px;
+  }
+  .edit-selection-footer{
+    padding:16px 20px;
+    border-top:1px solid rgba(255,255,255,0.08);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+  }
+  .edit-selection-count{
+    font-size:12px;
+    color:#9aa3b8;
+  }
+  .edit-selection-buttons{
+    display:flex;
+    gap:8px;
+  }
+  .edit-selection-btn-cancel{
+    padding:8px 16px;
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:6px;
+    color:#9aa3b8;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .edit-selection-btn-cancel:hover{border-color:rgba(255,255,255,0.3)}
+  .edit-selection-btn-apply{
+    padding:8px 16px;
+    background:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border:none;
+    border-radius:6px;
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .edit-selection-btn-apply:hover{box-shadow:0 4px 12px rgba(99,102,241,0.4)}
+
+  /* Shortlist panel responsive */
+  @media (max-width:1023px){
+    .results-with-shortlist{
+      grid-template-columns:1fr;
+    }
+    .shortlist-panel{
+      position:relative;
+      top:0;
+      order:-1;
+      max-height:none;
+    }
+    .shortlist-items{
+      flex-direction:row;
+      flex-wrap:wrap;
+      max-height:none;
+      gap:8px;
+    }
+    .shortlist-item{
+      flex:1;
+      min-width:140px;
+      max-width:200px;
+    }
+    .shortlist-actions{
+      flex-direction:row;
+      border-top:none;
+      padding-top:4px;
+    }
+    .shortlist-btn-primary,.shortlist-btn-secondary{
+      flex:1;
+    }
+  }
+  @media (max-width:767px){
+    .shortlist-panel{
+      padding:14px;
+    }
+    .shortlist-panel.collapsed .shortlist-items,
+    .shortlist-panel.collapsed .shortlist-actions{
+      display:none;
+    }
+    .shortlist-header{
+      cursor:pointer;
+      flex-direction:row;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .shortlist-toggle{
+      width:24px;
+      height:24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#9aa3b8;
+      transition:transform 0.2s ease;
+    }
+    .shortlist-panel.collapsed .shortlist-toggle{
+      transform:rotate(180deg);
+    }
+    .shortlist-items{
+      flex-direction:column;
+    }
+    .shortlist-item{
+      max-width:none;
+    }
+    .shortlist-actions{
+      flex-direction:column;
+    }
+  }
+  @media (min-width:768px){
+    .shortlist-toggle{display:none}
+  }
+
   /* Tool cards */
   .tool{
     position:relative; overflow:hidden;
@@ -772,6 +1146,27 @@
     </div>
   </div>
 
+  <!-- Edit Selection Modal -->
+  <div id="editSelectionModal" class="edit-selection-modal">
+    <div class="edit-selection-overlay"></div>
+    <div class="edit-selection-content">
+      <div class="edit-selection-header">
+        <h3>Edit Selection</h3>
+        <p>Select 1–5 tools for your report</p>
+      </div>
+      <div class="edit-selection-list" id="editSelectionList">
+        <!-- Populated dynamically -->
+      </div>
+      <div class="edit-selection-footer">
+        <span class="edit-selection-count" id="editSelectionCount">0 selected</span>
+        <div class="edit-selection-buttons">
+          <button class="edit-selection-btn-cancel" id="editSelectionCancel">Cancel</button>
+          <button class="edit-selection-btn-apply" id="editSelectionApply">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Staggered Menu Panel -->
   <div id="staggeredMenu" class="staggered-menu">
     <button id="menuCloseBtn" class="menu-close-btn" aria-label="Close menu"></button>
@@ -857,7 +1252,31 @@
         </div>
       </div>
       <div class="box alt">
-        <div id="tools" class="tools"></div>
+        <div id="resultsWrapper" class="results-with-shortlist no-panel">
+          <div class="results-column">
+            <div id="tools" class="tools"></div>
+          </div>
+          <div id="shortlistPanel" class="shortlist-panel is-hidden">
+            <div class="shortlist-header" id="shortlistHeader">
+              <div>
+                <div class="shortlist-title">Recommended Shortlist</div>
+                <div class="shortlist-subtitle">Top matches from your search</div>
+              </div>
+              <div class="shortlist-toggle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="shortlist-items" id="shortlistItems">
+              <!-- Populated dynamically -->
+            </div>
+            <div class="shortlist-actions">
+              <button class="shortlist-btn-primary" id="shortlistGenerateBtn">Generate Report</button>
+              <button class="shortlist-btn-secondary" id="shortlistEditBtn">Edit selection</button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
 
@@ -15301,6 +15720,11 @@
   var HAS_SEARCHED = false; // hide list until first search/CSV
   var LAST_QUERY = ''; // Track the last search query
 
+  // Shortlist state for recommended report
+  var SHORTLIST_SELECTION = []; // Array of selected tool IDs for report
+  var SHORTLIST_RESULTS = []; // Current sorted results (for reference)
+  var TEMP_SELECTION = []; // Temporary selection during edit modal
+
   // State persistence functions
   // Saves and restores application state (filters, search, compare) in localStorage
   // State expires after 24 hours and is cleared when returning to landing page
@@ -15718,6 +16142,246 @@
         updateDimming();
       });
     });
+
+    // Update shortlist panel after rendering results
+    updateShortlistPanel(rows);
+  }
+
+  // ===== Shortlist Panel Functions =====
+
+  function updateShortlistPanel(sortedRows){
+    var wrapper = document.getElementById('resultsWrapper');
+    var panel = document.getElementById('shortlistPanel');
+    var itemsContainer = document.getElementById('shortlistItems');
+    var generateBtn = document.getElementById('shortlistGenerateBtn');
+
+    // Only show panel when there's an active search query
+    if(!LAST_QUERY || LAST_QUERY.trim() === '' || sortedRows.length === 0){
+      wrapper.classList.add('no-panel');
+      panel.classList.add('is-hidden');
+      SHORTLIST_SELECTION = [];
+      SHORTLIST_RESULTS = [];
+      return;
+    }
+
+    // Store sorted results for reference
+    SHORTLIST_RESULTS = sortedRows;
+
+    // Default selection: top 3 (or fewer if less results)
+    var defaultCount = Math.min(3, sortedRows.length);
+    if(SHORTLIST_SELECTION.length === 0){
+      SHORTLIST_SELECTION = sortedRows.slice(0, defaultCount).map(r => r.__id);
+    } else {
+      // Filter out any selections that are no longer in results
+      SHORTLIST_SELECTION = SHORTLIST_SELECTION.filter(id =>
+        sortedRows.some(r => r.__id === id)
+      );
+      // If selection is empty after filtering, reset to default
+      if(SHORTLIST_SELECTION.length === 0){
+        SHORTLIST_SELECTION = sortedRows.slice(0, defaultCount).map(r => r.__id);
+      }
+    }
+
+    // Show the panel
+    wrapper.classList.remove('no-panel');
+    panel.classList.remove('is-hidden');
+
+    // Render shortlist items
+    renderShortlistItems();
+
+    // Update button text based on selection count
+    var count = SHORTLIST_SELECTION.length;
+    if(count === 1){
+      generateBtn.textContent = 'Generate Report (1 tool)';
+    } else if(count < 3){
+      generateBtn.textContent = 'Generate Report (' + count + ' tools)';
+    } else {
+      generateBtn.textContent = 'Generate Report';
+    }
+  }
+
+  function renderShortlistItems(){
+    var itemsContainer = document.getElementById('shortlistItems');
+    itemsContainer.innerHTML = '';
+
+    if(SHORTLIST_SELECTION.length === 0){
+      itemsContainer.innerHTML = '<div class="shortlist-empty">No tools selected</div>';
+      return;
+    }
+
+    SHORTLIST_SELECTION.forEach(function(id, index){
+      var rec = SHORTLIST_RESULTS.find(r => r.__id === id);
+      if(!rec) return;
+
+      var rank = SHORTLIST_RESULTS.findIndex(r => r.__id === id) + 1;
+      var score = parseFloat(rec['popularity_score']) || 0;
+      var name = rec.__display_name || rec['Product Name'] || rec['Vendor Name'] || 'Unnamed';
+
+      var item = document.createElement('div');
+      item.className = 'shortlist-item';
+      item.innerHTML =
+        '<div class="shortlist-item-badge badge-' + Math.min(rank, 3) + '">#' + rank + '</div>' +
+        '<div class="shortlist-item-info">' +
+          '<div class="shortlist-item-name">' + esc(name) + '</div>' +
+          '<div class="shortlist-item-score">Score: ' + score.toFixed(0) + '</div>' +
+        '</div>';
+
+      itemsContainer.appendChild(item);
+    });
+  }
+
+  function openEditSelectionModal(){
+    var modal = document.getElementById('editSelectionModal');
+    var listContainer = document.getElementById('editSelectionList');
+
+    // Initialize temp selection with current selection
+    TEMP_SELECTION = SHORTLIST_SELECTION.slice();
+
+    // Render items (show top 10 or all if less)
+    var itemsToShow = SHORTLIST_RESULTS.slice(0, Math.min(10, SHORTLIST_RESULTS.length));
+    listContainer.innerHTML = '';
+
+    itemsToShow.forEach(function(rec, index){
+      var id = rec.__id;
+      var name = rec.__display_name || rec['Product Name'] || rec['Vendor Name'] || 'Unnamed';
+      var vendor = rec['Vendor Name'] || '';
+      var score = parseFloat(rec['popularity_score']) || 0;
+      var isSelected = TEMP_SELECTION.includes(id);
+
+      var item = document.createElement('div');
+      item.className = 'edit-selection-item' + (isSelected ? ' selected' : '');
+      item.dataset.id = id;
+      item.innerHTML =
+        '<div class="edit-selection-checkbox">' +
+          '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>' +
+        '</div>' +
+        '<div class="edit-selection-item-info">' +
+          '<div class="edit-selection-item-name">#' + (index + 1) + ' ' + esc(name) + '</div>' +
+          '<div class="edit-selection-item-meta">' + esc(vendor) + ' • Score: ' + score.toFixed(0) + '</div>' +
+        '</div>';
+
+      item.addEventListener('click', function(){
+        toggleEditSelection(id, item);
+      });
+
+      listContainer.appendChild(item);
+    });
+
+    updateEditSelectionCount();
+    modal.classList.add('active');
+  }
+
+  function closeEditSelectionModal(){
+    var modal = document.getElementById('editSelectionModal');
+    modal.classList.remove('active');
+    TEMP_SELECTION = [];
+  }
+
+  function toggleEditSelection(id, itemEl){
+    var index = TEMP_SELECTION.indexOf(id);
+    var maxItems = 5;
+
+    if(index === -1){
+      // Add to selection if under max
+      if(TEMP_SELECTION.length < maxItems){
+        TEMP_SELECTION.push(id);
+        itemEl.classList.add('selected');
+      }
+    } else {
+      // Remove from selection (but keep at least 1)
+      if(TEMP_SELECTION.length > 1){
+        TEMP_SELECTION.splice(index, 1);
+        itemEl.classList.remove('selected');
+      }
+    }
+
+    updateEditSelectionCount();
+    updateEditSelectionDisabled();
+  }
+
+  function updateEditSelectionCount(){
+    var countEl = document.getElementById('editSelectionCount');
+    countEl.textContent = TEMP_SELECTION.length + ' selected';
+  }
+
+  function updateEditSelectionDisabled(){
+    var maxItems = 5;
+    var items = document.querySelectorAll('.edit-selection-item');
+
+    items.forEach(function(item){
+      var isSelected = item.classList.contains('selected');
+      if(!isSelected && TEMP_SELECTION.length >= maxItems){
+        item.classList.add('disabled');
+      } else {
+        item.classList.remove('disabled');
+      }
+    });
+  }
+
+  function applyEditSelection(){
+    SHORTLIST_SELECTION = TEMP_SELECTION.slice();
+    renderShortlistItems();
+
+    // Update button text
+    var generateBtn = document.getElementById('shortlistGenerateBtn');
+    var count = SHORTLIST_SELECTION.length;
+    if(count === 1){
+      generateBtn.textContent = 'Generate Report (1 tool)';
+    } else if(count < 3){
+      generateBtn.textContent = 'Generate Report (' + count + ' tools)';
+    } else {
+      generateBtn.textContent = 'Generate Report';
+    }
+
+    closeEditSelectionModal();
+  }
+
+  function generateShortlistReport(){
+    if(SHORTLIST_SELECTION.length === 0){
+      alert('Please select at least one tool for the report.');
+      return;
+    }
+
+    // Get selected tool names and IDs for logging
+    var selectedTools = SHORTLIST_SELECTION.map(function(id){
+      var rec = SHORTLIST_RESULTS.find(r => r.__id === id);
+      return {
+        id: id,
+        name: rec ? (rec.__display_name || rec['Product Name'] || 'Unknown') : 'Unknown'
+      };
+    });
+
+    console.log('Generate Report - Selected tools:', selectedTools);
+
+    // Check if compare functionality exists and use it
+    // For now, show a placeholder message
+    var toolNames = selectedTools.map(t => t.name).join(', ');
+    alert('Report generation coming next!\n\nSelected tools:\n• ' + selectedTools.map(t => t.name).join('\n• '));
+  }
+
+  // Mobile shortlist toggle
+  function toggleShortlistPanel(){
+    var panel = document.getElementById('shortlistPanel');
+    if(window.innerWidth < 768){
+      panel.classList.toggle('collapsed');
+    }
+  }
+
+  // Initialize shortlist event listeners
+  function initShortlistPanel(){
+    var editBtn = document.getElementById('shortlistEditBtn');
+    var generateBtn = document.getElementById('shortlistGenerateBtn');
+    var header = document.getElementById('shortlistHeader');
+    var cancelBtn = document.getElementById('editSelectionCancel');
+    var applyBtn = document.getElementById('editSelectionApply');
+    var modalOverlay = document.querySelector('.edit-selection-overlay');
+
+    if(editBtn) editBtn.addEventListener('click', openEditSelectionModal);
+    if(generateBtn) generateBtn.addEventListener('click', generateShortlistReport);
+    if(header) header.addEventListener('click', toggleShortlistPanel);
+    if(cancelBtn) cancelBtn.addEventListener('click', closeEditSelectionModal);
+    if(applyBtn) applyBtn.addEventListener('click', applyEditSelection);
+    if(modalOverlay) modalOverlay.addEventListener('click', closeEditSelectionModal);
   }
 
   function renderDetails(rec){
@@ -16269,6 +16933,7 @@
     if(!q){ aiStatus.textContent="Please type what you need."; return; }
     aiStatus.textContent="Thinking…";
     LAST_QUERY = q; // Store the search query
+    SHORTLIST_SELECTION = []; // Reset shortlist for new search
     try{
       const res = await fetch("/query", {
         method:"POST",
@@ -16338,6 +17003,7 @@
   function viewAllTools(){
     HAS_SEARCHED = true;
     LAST_QUERY = '';
+    SHORTLIST_SELECTION = []; // Reset shortlist when viewing all
 
     // Clear the AI search input
     if(aiQuery) aiQuery.value = '';
@@ -16499,6 +17165,7 @@
   // Init
   document.body.classList.add('has-landing'); // Add landing class on load
   buildFilters();
+  initShortlistPanel();
   applyFilters();
   loadCSVFromURL(AUTO_CSV_URL);  // preload database silently
   </script>
