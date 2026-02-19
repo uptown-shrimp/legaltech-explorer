@@ -16168,9 +16168,17 @@
     SHORTLIST_RESULTS = sortedRows;
 
     // Default selection: top 3 (or fewer if less results)
+    // Ensure we get unique IDs from the first 3 distinct records
     var defaultCount = Math.min(3, sortedRows.length);
     if(SHORTLIST_SELECTION.length === 0){
-      SHORTLIST_SELECTION = sortedRows.slice(0, defaultCount).map(r => r.__id);
+      var uniqueIds = [];
+      for(var i = 0; i < sortedRows.length && uniqueIds.length < defaultCount; i++){
+        var id = sortedRows[i].__id;
+        if(uniqueIds.indexOf(id) === -1){
+          uniqueIds.push(id);
+        }
+      }
+      SHORTLIST_SELECTION = uniqueIds;
     } else {
       // Filter out any selections that are no longer in results
       SHORTLIST_SELECTION = SHORTLIST_SELECTION.filter(id =>
@@ -16178,7 +16186,14 @@
       );
       // If selection is empty after filtering, reset to default
       if(SHORTLIST_SELECTION.length === 0){
-        SHORTLIST_SELECTION = sortedRows.slice(0, defaultCount).map(r => r.__id);
+        var uniqueIds = [];
+        for(var i = 0; i < sortedRows.length && uniqueIds.length < defaultCount; i++){
+          var id = sortedRows[i].__id;
+          if(uniqueIds.indexOf(id) === -1){
+            uniqueIds.push(id);
+          }
+        }
+        SHORTLIST_SELECTION = uniqueIds;
       }
     }
 
@@ -16342,21 +16357,17 @@
       return;
     }
 
-    // Get selected tool names and IDs for logging
-    var selectedTools = SHORTLIST_SELECTION.map(function(id){
-      var rec = SHORTLIST_RESULTS.find(r => r.__id === id);
-      return {
-        id: id,
-        name: rec ? (rec.__display_name || rec['Product Name'] || 'Unknown') : 'Unknown'
-      };
-    });
+    // Set the compare array to the shortlist selection
+    // This replaces the current compare selection with the shortlist
+    compare = SHORTLIST_SELECTION.slice();
+    updateCompareCount();
+    saveState();
 
-    console.log('Generate Report - Selected tools:', selectedTools);
+    // Open the compare overlay - this will auto-trigger AI summary generation
+    openCompareOverlay();
 
-    // Check if compare functionality exists and use it
-    // For now, show a placeholder message
-    var toolNames = selectedTools.map(t => t.name).join(', ');
-    alert('Report generation coming next!\n\nSelected tools:\n• ' + selectedTools.map(t => t.name).join('\n• '));
+    // Log for debugging
+    console.log('Generate Report - Tools added to compare:', SHORTLIST_SELECTION);
   }
 
   // Mobile shortlist toggle
