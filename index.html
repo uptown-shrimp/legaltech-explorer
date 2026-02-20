@@ -164,6 +164,10 @@
     border-color:rgba(251,191,36,0.8);
     box-shadow:0 8px 32px rgba(251,191,36,0.25);
   }
+  .tool.rank-1 .rank-badge{
+    left:50%;
+    transform:translateX(-50%);
+  }
   .tool.rank-1 .aus-flag{
     top:8px;
     right:8px;
@@ -16167,10 +16171,11 @@
     // Store sorted results for reference
     SHORTLIST_RESULTS = sortedRows;
 
-    // Default selection: top 3 (or fewer if less results)
-    // Ensure we get unique IDs from the first 3 distinct records
+    // Use compare array as the selection (they are now unified)
+    // If compare is empty, default to top 3 results
     var defaultCount = Math.min(3, sortedRows.length);
-    if(SHORTLIST_SELECTION.length === 0){
+    if(compare.length === 0){
+      // Default selection: top 3 unique IDs
       var uniqueIds = [];
       for(var i = 0; i < sortedRows.length && uniqueIds.length < defaultCount; i++){
         var id = sortedRows[i].__id;
@@ -16179,13 +16184,15 @@
         }
       }
       SHORTLIST_SELECTION = uniqueIds;
+      compare = uniqueIds.slice(); // Sync compare with shortlist
+      updateCompareCount();
     } else {
-      // Filter out any selections that are no longer in results
-      SHORTLIST_SELECTION = SHORTLIST_SELECTION.filter(id =>
+      // Use compare array, but filter to only include items in current results
+      var validIds = compare.filter(id =>
         sortedRows.some(r => r.__id === id)
       );
-      // If selection is empty after filtering, reset to default
-      if(SHORTLIST_SELECTION.length === 0){
+      if(validIds.length === 0){
+        // If no valid selections, default to top 3
         var uniqueIds = [];
         for(var i = 0; i < sortedRows.length && uniqueIds.length < defaultCount; i++){
           var id = sortedRows[i].__id;
@@ -16194,6 +16201,10 @@
           }
         }
         SHORTLIST_SELECTION = uniqueIds;
+        compare = uniqueIds.slice();
+        updateCompareCount();
+      } else {
+        SHORTLIST_SELECTION = validIds;
       }
     }
 
@@ -16203,16 +16214,7 @@
 
     // Render shortlist items
     renderShortlistItems();
-
-    // Update button text based on selection count
-    var count = SHORTLIST_SELECTION.length;
-    if(count === 1){
-      generateBtn.textContent = 'Generate Report (1 tool)';
-    } else if(count < 3){
-      generateBtn.textContent = 'Generate Report (' + count + ' tools)';
-    } else {
-      generateBtn.textContent = 'Generate Report';
-    }
+    updateShortlistButton();
   }
 
   function renderShortlistItems(){
@@ -16335,18 +16337,12 @@
 
   function applyEditSelection(){
     SHORTLIST_SELECTION = TEMP_SELECTION.slice();
+    compare = SHORTLIST_SELECTION.slice(); // Sync compare with shortlist
+    updateCompareCount();
+    saveState();
     renderShortlistItems();
-
-    // Update button text
-    var generateBtn = document.getElementById('shortlistGenerateBtn');
-    var count = SHORTLIST_SELECTION.length;
-    if(count === 1){
-      generateBtn.textContent = 'Generate Report (1 tool)';
-    } else if(count < 3){
-      generateBtn.textContent = 'Generate Report (' + count + ' tools)';
-    } else {
-      generateBtn.textContent = 'Generate Report';
-    }
+    updateShortlistButton();
+    applyFilters(); // Re-render to update "Add to compare" button states
 
     closeEditSelectionModal();
   }
@@ -16363,8 +16359,8 @@
     updateCompareCount();
     saveState();
 
-    // Open the compare overlay - this will auto-trigger AI summary generation
-    openCompareOverlay();
+    // Open the compare overlay directly to AI tab
+    openCompareOverlay('ai');
 
     // Log for debugging
     console.log('Generate Report - Tools added to compare:', SHORTLIST_SELECTION);
@@ -16669,6 +16665,26 @@
     else compare.splice(i,1);
     updateCompareCount();
     saveState(); // Save state when compare selection changes
+
+    // Sync shortlist panel with compare selection
+    SHORTLIST_SELECTION = compare.slice();
+    renderShortlistItems();
+    updateShortlistButton();
+  }
+
+  function updateShortlistButton(){
+    var generateBtn = document.getElementById('shortlistGenerateBtn');
+    if(!generateBtn) return;
+    var count = SHORTLIST_SELECTION.length;
+    if(count === 0){
+      generateBtn.textContent = 'Generate Report';
+    } else if(count === 1){
+      generateBtn.textContent = 'Generate Report (1 tool)';
+    } else if(count < 3){
+      generateBtn.textContent = 'Generate Report (' + count + ' tools)';
+    } else {
+      generateBtn.textContent = 'Generate Report';
+    }
   }
 
   function updateCompareCount(){
@@ -16831,9 +16847,17 @@
     }
   }
 
-  function openCompareOverlay(){
+  function openCompareOverlay(startTab){
     showWithAnim(compareOverlay);
     renderCompare();
+
+    // Switch to specified tab (default to 'table' if not specified)
+    if(startTab === 'ai'){
+      switchCompareTab('ai');
+    } else {
+      switchCompareTab('table');
+    }
+
     // Auto-generate AI summary when opening compare
     if(compare.length > 0){
       setTimeout(generateAISummary, 500);
