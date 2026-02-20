@@ -165,13 +165,17 @@
     box-shadow:0 8px 32px rgba(251,191,36,0.25);
   }
   .tool.rank-1 .rank-badge{
-    left:50%;
-    transform:translateX(-50%);
+    left:auto;
+    right:8px;
+    transform:none;
   }
   .tool.rank-1 .aus-flag{
     top:8px;
     right:8px;
     left:auto;
+  }
+  .tool.rank-1.has-aus-flag .rank-badge{
+    right:36px;
   }
 
   /* Responsive ranked layout */
@@ -15980,6 +15984,7 @@
     // Add Australian flag if hosted in Australia
     var hostingLocation = rec['Hosting Location'] || '';
     if(hostingLocation.toLowerCase().includes('australia')) {
+      card.classList.add('has-aus-flag');
       var flag = document.createElement('img');
       flag.src = 'logos/ausflag.png';
       flag.className = 'aus-flag';
