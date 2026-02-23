@@ -16028,7 +16028,7 @@
     var detailsBtn = document.createElement('button'); detailsBtn.className='btn btn-details'; detailsBtn.textContent='Details';
     var cmpBtn = document.createElement('button'); cmpBtn.className='btn btn-compare';
     cmpBtn.textContent = chosen ? '✓ Added' : 'Add to compare';
-    if(chosen) cmpBtn.style.background = '#1a4d2e';
+    if(chosen){ cmpBtn.style.background = '#2563eb'; cmpBtn.style.color = '#ffffff'; }
     act.appendChild(detailsBtn); act.appendChild(cmpBtn);
 
     card.appendChild(head); card.appendChild(popBar); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
