@@ -15752,6 +15752,7 @@
   var SHORTLIST_SELECTION = []; // Array of selected tool IDs for report
   var SHORTLIST_RESULTS = []; // Current sorted results (for reference)
   var TEMP_SELECTION = []; // Temporary selection during edit modal
+  var LAST_GENERATED_KEY = ''; // Tracks the selection key when report was last generated
 
   // State persistence functions
   // Saves and restores application state (filters, search, compare) in localStorage
@@ -16389,17 +16390,16 @@
       return;
     }
 
-    // Set the compare array to the shortlist selection
-    // This replaces the current compare selection with the shortlist
     compare = SHORTLIST_SELECTION.slice();
     updateCompareCount();
     saveState();
 
-    // Open the compare overlay directly to AI tab
-    openCompareOverlay('ai');
+    // Record which selection was just generated so button hides until selection changes
+    LAST_GENERATED_KEY = SHORTLIST_SELECTION.slice().sort().join('|');
+    var generateBtn = document.getElementById('shortlistGenerateBtn');
+    if(generateBtn){ generateBtn.style.display = 'none'; }
 
-    // Log for debugging
-    console.log('Generate Report - Tools added to compare:', SHORTLIST_SELECTION);
+    openCompareOverlay('ai');
   }
 
   // Mobile shortlist toggle
@@ -16516,8 +16516,9 @@
     var rows='';
     Object.keys(rec).forEach(function(k){
       if(/^_/.test(k) || /^__/.test(k)) return;
-      if(k === 'Vendor Contact Details') return;  // Skip contact details
-      if(k === 'popularity_score') return;  // Skip, shown in breakdown
+      if(k === 'Vendor Contact Details') return;
+      if(k === 'popularity_score') return;
+      if(k === 'google_trends_score') return;
       var v=rec[k]; if(v==null || v==='') return;
       var val=esc(v); if(/^https?:\/\//i.test(String(v))) val='<a href="'+v+'" target="_blank" rel="noopener">'+esc(v)+'</a>';
       rows+='<tr><th style="text-align:left;padding:6px 10px;background:#f8f9fb;border:1px solid var(--border);color:#1e2535">'+esc(k)+'</th><td style="padding:6px 10px;background:#ffffff;border:1px solid var(--border);color:#4a5568">'+val+'</td></tr>';
@@ -16713,6 +16714,13 @@
     var generateBtn = document.getElementById('shortlistGenerateBtn');
     if(!generateBtn) return;
     var count = SHORTLIST_SELECTION.length;
+    var currentKey = SHORTLIST_SELECTION.slice().sort().join('|');
+    // Show button only when the current selection differs from last generated
+    if(currentKey === LAST_GENERATED_KEY){
+      generateBtn.style.display = 'none';
+      return;
+    }
+    generateBtn.style.display = '';
     if(count === 0){
       generateBtn.textContent = 'Generate Report';
     } else if(count === 1){
@@ -17013,6 +17021,7 @@
     aiStatus.textContent="Thinking…";
     LAST_QUERY = q; // Store the search query
     SHORTLIST_SELECTION = []; // Reset shortlist for new search
+    LAST_GENERATED_KEY = ''; // Allow report to be generated for new results
     try{
       const res = await fetch("/query", {
         method:"POST",
