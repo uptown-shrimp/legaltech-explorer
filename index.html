@@ -16498,9 +16498,10 @@
       c.weightPercent = (c.normalizedWeight * 100).toFixed(0);
     });
 
-    // Build breakdown HTML
+    // Build breakdown HTML (Google Trends excluded from display only - still used in score)
     var breakdownItems = '';
     components.forEach(function(c){
+      if(c.name === 'Google Trends') return;
       breakdownItems += '<div class="popularity-breakdown-item">'+
         '<span class="popularity-breakdown-label">'+c.name+' ('+c.weightPercent+'%)</span>'+
         '<span class="popularity-breakdown-value">'+c.base.toFixed(0)+'/100</span>'+
@@ -16880,6 +16881,10 @@
 
     if(mode==='details'){
       rightTitle.textContent='Details';
+      var _sp = document.getElementById('shortlistPanel');
+      var _rw = document.getElementById('resultsWrapper');
+      if(_sp){ _sp.classList.add('is-hidden'); }
+      if(_rw){ _rw.classList.add('no-panel'); }
     }
   }
 
@@ -16909,6 +16914,9 @@
       document.body.classList.remove('state-right','state-right-wide','mode-details');
       document.getElementById('expandRight').textContent='Expand';
       if(!document.body.classList.contains('state-filters')){ document.body.classList.add('state-main'); }
+      if(typeof updateShortlistPanel === 'function' && typeof SHORTLIST_RESULTS !== 'undefined'){
+        updateShortlistPanel(SHORTLIST_RESULTS);
+      }
       updateDimming();
     }});
   }
