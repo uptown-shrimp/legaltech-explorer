@@ -16155,6 +16155,7 @@
           SELECTED_ID = id;
           renderDetails(rec);
           openRight('details');
+          history.pushState({ view: 'detail', id: id, query: LAST_QUERY }, '');
           if(!document.body.classList.contains('state-right-wide')){
             document.body.classList.add('state-right-wide');
             document.getElementById('expandRight').textContent='Collapse';
@@ -16959,6 +16960,7 @@
     compare = []; // Clear compare selection
     applyFilters();
     localStorage.removeItem('legaltech_explorer_state'); // Clear saved state
+    history.pushState({ view: 'landing' }, '');
   });
   document.getElementById('filtersBtn').onclick=function(){
     if(document.body.classList.contains('state-filters')){
@@ -17029,6 +17031,14 @@
         body:JSON.stringify({ query:q })
       });
       if(!res.ok){
+        // 401 = session expired (ghost state) — re-validate and prompt login
+        if(res.status === 401 && typeof checkAuthStatus === 'function'){
+          window.AUTH_STATE.authenticated = false;
+          await checkAuthStatus();
+          if(!window.AUTH_STATE.authenticated && typeof openLoginModal === 'function') openLoginModal();
+          aiStatus.textContent = 'Session expired — please sign in again.';
+          return;
+        }
         const text = await res.text().catch(()=>"<no body>");
         console.error("AI /query error", res.status, text);
         aiStatus.textContent = `Server error ${res.status}: ${text}`;
@@ -17042,6 +17052,7 @@
       document.getElementById('aiLanding').style.display="none";
       document.body.classList.remove('has-landing');
       applyFilters();
+      history.pushState({ view: 'search', query: q }, '');
     }catch(err){
       console.error("Network/Fetch failed:", err);
       aiStatus.textContent = `Couldn't reach the AI server: ${err?.message||err}`;
@@ -17114,6 +17125,7 @@
     document.getElementById('aiLanding').style.display = 'none';
     document.body.classList.remove('has-landing');
     applyFilters();
+    history.pushState({ view: 'all' }, '');
   }
 
   // Staggered Menu functionality
@@ -17257,6 +17269,58 @@
   initShortlistPanel();
   applyFilters();
   loadCSVFromURL(AUTO_CSV_URL);  // preload database silently
+
+  // ===== Browser History (back/forward support) =====
+  history.replaceState({ view: 'landing' }, '');
+
+  window.addEventListener('popstate', function(e) {
+    var state = e.state;
+    if (!state || state.view === 'landing') {
+      // Back to landing
+      document.getElementById('aiLanding').style.display = 'flex';
+      document.body.classList.add('has-landing');
+      LAST_QUERY = '';
+      HAS_SEARCHED = false;
+      compare = [];
+      SHORTLIST_SELECTION = [];
+      if (aiQuery) aiQuery.value = '';
+      if (aiStatus) aiStatus.textContent = '';
+      closeRight();
+      applyFilters();
+    } else if (state.view === 'search') {
+      // Back to a previous search
+      document.getElementById('aiLanding').style.display = 'none';
+      document.body.classList.remove('has-landing');
+      LAST_QUERY = state.query || '';
+      HAS_SEARCHED = true;
+      if (aiQuery) aiQuery.value = state.query || '';
+      closeRight();
+      applyFilters();
+    } else if (state.view === 'all') {
+      // Back to browse-all view
+      document.getElementById('aiLanding').style.display = 'none';
+      document.body.classList.remove('has-landing');
+      LAST_QUERY = '';
+      HAS_SEARCHED = true;
+      if (aiQuery) aiQuery.value = '';
+      closeRight();
+      applyFilters();
+    } else if (state.view === 'detail') {
+      // Back to a specific tool detail
+      document.getElementById('aiLanding').style.display = 'none';
+      document.body.classList.remove('has-landing');
+      LAST_QUERY = state.query || '';
+      HAS_SEARCHED = true;
+      if (aiQuery) aiQuery.value = state.query || '';
+      applyFilters();
+      var rec = DATA.find(function(r) { return r.__id === state.id; });
+      if (rec) {
+        SELECTED_ID = state.id;
+        renderDetails(rec);
+        openRight('details');
+      }
+    }
+  });
   </script>
 
   <!-- AURORA SHADER -->
@@ -18436,6 +18500,21 @@ void main(){
         openLoginModal();
       }
     });
+
+    // ===== Ghost State Prevention =====
+    // Silently re-validate the session every 5 minutes.
+    // If the JWT has expired and refresh fails, show the login modal immediately
+    // rather than leaving the user in a broken "logged-in" state.
+    setInterval(async function() {
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') return;
+      if (!window.AUTH_STATE || !window.AUTH_STATE.authenticated) return;
+      var wasAuthenticated = window.AUTH_STATE.authenticated;
+      await checkAuthStatus();
+      if (wasAuthenticated && !window.AUTH_STATE.authenticated) {
+        // Session expired mid-session — prompt re-login
+        openLoginModal();
+      }
+    }, 5 * 60 * 1000); // every 5 minutes
   </script>
 
   <!-- Floating Help Button -->
