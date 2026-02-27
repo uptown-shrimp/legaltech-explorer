@@ -1054,6 +1054,10 @@
       <div class="static-headline">Describe the legal-tech you're looking for</div>
       <textarea id="aiQuery" rows="3" placeholder="e.g. contract management software for a mid-size law firm..."
         style="width:100%;padding:14px 16px;border-radius:10px;border:1px solid var(--border);font-size:14px;resize:none;background:#f8f9fb;color:#1e2535;box-shadow:none;outline:none;"></textarea>
+      <div style="display:flex;gap:10px;width:100%;align-items:center;">
+        <button id="aiSearchBtn" class="btn primary" style="flex:1;padding:12px 20px;font-size:15px;border-radius:10px;">Search</button>
+        <button id="viewAllBtnLanding" class="btn" style="padding:12px 20px;font-size:14px;border-radius:10px;white-space:nowrap;">Browse all tools</button>
+      </div>
       <div id="aiStatus" class="sub" style="min-height:18px;text-align:center"></div>
     </div>
   </div>
@@ -17153,6 +17157,7 @@
 
   // View All Tools button listener
   document.getElementById('viewAllBtnHeader')?.addEventListener('click', viewAllTools);
+  document.getElementById('viewAllBtnLanding')?.addEventListener('click', viewAllTools);
 
   // Show differences checkbox listener
   document.addEventListener('change', function(e){
