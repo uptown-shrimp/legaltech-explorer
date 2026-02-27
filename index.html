@@ -16477,14 +16477,10 @@
     var completeness = Object.keys(rec).filter(k=>rec[k]&&!/^_/.test(k)).length / Object.keys(rec).length;
     var completenessBase = completeness > 0 ? completeness * 100 : null;
 
-    // Google Trends: ALWAYS included, defaults to 0 if no data (never null)
-    var trendsBase = parseFloat(rec['google_trends_score']) || 0;
-
     // Build array of available components with their data
     var components = [];
     if(adoptionBase !== null) components.push({name:'Adoption Level', base:adoptionBase, baseWeight:baseWeights.adoption});
     if(maturityBase !== null) components.push({name:'Maturity', base:maturityBase, baseWeight:baseWeights.maturity});
-    components.push({name:'Google Trends', base:trendsBase, baseWeight:baseWeights.trends}); // Always included (0 if no data)
     components.push({name:'AI-Powered', base:aiBase, baseWeight:baseWeights.ai}); // Always included
     if(regionBase !== null) components.push({name:'Regions Served', base:regionBase, baseWeight:baseWeights.regions});
     if(completenessBase !== null) components.push({name:'Data Completeness', base:completenessBase, baseWeight:baseWeights.completeness});
@@ -16880,6 +16876,11 @@
 
     if(mode==='details'){
       rightTitle.textContent='Details';
+      // Hide shortlist panel so tool cards aren't squished alongside the details sidebar
+      var shortlistEl = document.getElementById('shortlistPanel');
+      var wrapperEl = document.getElementById('resultsWrapper');
+      if(shortlistEl){ shortlistEl.classList.add('is-hidden'); }
+      if(wrapperEl){ wrapperEl.classList.add('no-panel'); }
     }
   }
 
@@ -16909,6 +16910,10 @@
       document.body.classList.remove('state-right','state-right-wide','mode-details');
       document.getElementById('expandRight').textContent='Expand';
       if(!document.body.classList.contains('state-filters')){ document.body.classList.add('state-main'); }
+      // Restore shortlist panel to its correct state (visible if there's an active search)
+      if(typeof updateShortlistPanel === 'function' && typeof SHORTLIST_RESULTS !== 'undefined'){
+        updateShortlistPanel(SHORTLIST_RESULTS);
+      }
       updateDimming();
     }});
   }
