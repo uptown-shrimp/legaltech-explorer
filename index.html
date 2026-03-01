@@ -17043,6 +17043,29 @@
   const aiQuery=document.getElementById('aiQuery');
   const aiStatus=document.getElementById('aiStatus');
 
+  function runClientSideSearch(q){
+    // Keyword search against DATA for unauthenticated users
+    var tokens = q.toLowerCase().split(/\s+/).filter(Boolean);
+    var scored = DATA.map(function(rec){
+      var blob = quickBlob(rec).toLowerCase();
+      var score = 0;
+      tokens.forEach(function(tok){ if(blob.indexOf(tok) !== -1) score++; });
+      return { rec: rec, score: score };
+    });
+    // Keep only records that match at least one token, sorted best-first
+    var matched = scored.filter(function(s){ return s.score > 0; })
+                        .sort(function(a,b){ return b.score - a.score; })
+                        .map(function(s){ return s.rec; });
+    // If nothing matched, show all tools
+    if(!matched.length){ matched = DATA.slice(); }
+    HAS_SEARCHED = true;
+    document.getElementById('aiLanding').style.display="none";
+    document.body.classList.remove('has-landing');
+    renderList(matched);
+    history.pushState({ view: 'search', query: q }, '');
+    aiStatus.textContent = '';
+  }
+
   async function runAISearch(){
     const q = aiQuery.value.trim();
     if(!q){ aiStatus.textContent="Please type what you need."; return; }
@@ -17050,6 +17073,13 @@
     LAST_QUERY = q; // Store the search query
     SHORTLIST_SELECTION = []; // Reset shortlist for new search
     LAST_GENERATED_KEY = ''; // Allow report to be generated for new results
+
+    // If user is not authenticated, use client-side keyword search
+    if(!window.AUTH_STATE || !window.AUTH_STATE.authenticated){
+      runClientSideSearch(q);
+      return;
+    }
+
     try{
       const res = await fetch("/query", {
         method:"POST",
@@ -17058,9 +17088,9 @@
       });
       if(!res.ok){
         if(res.status === 401){
-          // Search requires sign-in — prompt via requireAuth but don't block
-          aiStatus.textContent = 'Please sign in to use AI search.';
+          // Session expired mid-flight — fall back to client-side search
           window.AUTH_STATE.authenticated = false;
+          runClientSideSearch(q);
           return;
         }
         const text = await res.text().catch(()=>"<no body>");
