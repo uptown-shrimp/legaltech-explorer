@@ -714,6 +714,13 @@ def serve_updated_csv(user: dict = Depends(require_auth)):
 def health():
     return {"ok": True, "has_key": bool(OPENAI_API_KEY), "model": OPENAI_MODEL}
 
+@app.get("/config")
+def get_config():
+    """Return public client-side config (non-secret keys safe to expose to the browser)"""
+    return {
+        "posthog_key": os.getenv("POSTHOG_API_KEY", "")
+    }
+
 @app.post("/query")
 async def generate_filters(req: Query, user: dict = Depends(rate_limit_dependency)):
     system_msg = (
