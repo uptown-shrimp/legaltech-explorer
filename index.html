@@ -16054,9 +16054,31 @@
 
     var act = document.createElement('div'); act.className='actions';
     var detailsBtn = document.createElement('button'); detailsBtn.className='btn btn-details'; detailsBtn.textContent='Details';
+    detailsBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      window.requireAuth(function(){
+        SELECTED_ID = rec.__id;
+        renderDetails(rec);
+        openRight('details');
+        history.pushState({ view: 'detail', id: rec.__id, query: LAST_QUERY }, '');
+        if(!document.body.classList.contains('state-right-wide')){
+          document.body.classList.add('state-right-wide');
+          document.getElementById('expandRight').textContent='Collapse';
+        }
+        updateDimming();
+      });
+    });
     var cmpBtn = document.createElement('button'); cmpBtn.className='btn btn-compare';
     cmpBtn.textContent = chosen ? '✓ Added' : 'Add to compare';
     if(chosen){ cmpBtn.style.background = '#2EA7A7'; cmpBtn.style.color = '#ffffff'; cmpBtn.style.borderColor = 'transparent'; }
+    cmpBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      window.requireAuth(function(){
+        toggleCompare(rec.__id);
+        applyFilters();
+        updateDimming();
+      });
+    });
     act.appendChild(detailsBtn); act.appendChild(cmpBtn);
 
     card.appendChild(head); card.appendChild(popBar); card.appendChild(desc); card.appendChild(chipRow); card.appendChild(act);
@@ -16154,11 +16176,11 @@
       setTimeout(()=>{ el.classList.add('revealed'); }, 40*i);
     });
 
-    // Click anywhere on card opens details (except compare button)
+    // Click on card body (outside action buttons) also opens details
     Array.prototype.forEach.call(container.querySelectorAll('.tool'), function(card){
       card.addEventListener('click', function(e){
-        // Don't open details if clicking on compare button or links
-        if(e.target.closest('.btn-compare') || e.target.closest('a')){
+        // Action buttons handle themselves with stopPropagation
+        if(e.target.closest('.btn-compare') || e.target.closest('.btn-details') || e.target.closest('a')){
           return;
         }
         var id = card.dataset.id;
@@ -16173,17 +16195,6 @@
             document.body.classList.add('state-right-wide');
             document.getElementById('expandRight').textContent='Collapse';
           }
-          updateDimming();
-        });
-      });
-    });
-    Array.prototype.forEach.call(container.querySelectorAll('.btn-compare'), function(btn){
-      btn.addEventListener('click', function(e){
-        e.stopPropagation();
-        var id=e.target.closest('.tool').dataset.id;
-        window.requireAuth(function(){
-          toggleCompare(id);
-          applyFilters();
           updateDimming();
         });
       });
@@ -16981,7 +16992,7 @@
     if(document.body.classList.contains('state-filters')){
       closeFilters();
     } else {
-      openFilters();
+      window.requireAuth(openFilters);
     }
   };
   document.getElementById('closeFilters').onclick=closeFilters;
@@ -17046,12 +17057,10 @@
         body:JSON.stringify({ query:q })
       });
       if(!res.ok){
-        // 401 = session expired (ghost state) — re-validate and prompt login
-        if(res.status === 401 && typeof checkAuthStatus === 'function'){
+        if(res.status === 401){
+          // Search requires sign-in — prompt via requireAuth but don't block
+          aiStatus.textContent = 'Please sign in to use AI search.';
           window.AUTH_STATE.authenticated = false;
-          await checkAuthStatus();
-          if(!window.AUTH_STATE.authenticated && typeof openLoginModal === 'function') openLoginModal();
-          aiStatus.textContent = 'Session expired — please sign in again.';
           return;
         }
         const text = await res.text().catch(()=>"<no body>");
