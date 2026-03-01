@@ -1047,6 +1047,17 @@
     height: 26px;
   }
 </style>
+<!-- PostHog Analytics -->
+<script>
+  !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+" (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+  posthog.init('YOUR_POSTHOG_API_KEY', {
+    api_host: 'https://us.i.posthog.com',
+    person_profiles: 'identified_only',
+    capture_pageview: true,
+    capture_pageleave: true,
+    session_recording: { maskAllInputs: false }
+  });
+</script>
 </head>
 <body class="state-main has-landing">
 
@@ -16382,6 +16393,10 @@
     compare = SHORTLIST_SELECTION.slice();
     updateCompareCount();
     saveState();
+    posthog?.capture('shortlist_report_generated', {
+      query: LAST_QUERY,
+      tools: SHORTLIST_SELECTION.map(id => DATA.find(r=>r.__id===id)?.__display_name || id)
+    });
 
     // Record which selection was just generated so button hides until selection changes
     LAST_GENERATED_KEY = SHORTLIST_SELECTION.slice().sort().join('|');
@@ -16419,6 +16434,7 @@
   function renderDetails(rec){
     var details = document.getElementById('details');
     if(!rec){ details.textContent='No record'; return; }
+    posthog?.capture('tool_viewed', { tool: rec.__display_name, vendor: rec['Vendor Name'], query: LAST_QUERY });
     rightTitle.textContent = 'Details';
 
     var top=document.createElement('div'); top.style.display='flex'; top.style.gap='10px'; top.style.alignItems='center'; top.style.marginBottom='8px';
@@ -16688,8 +16704,14 @@
 
   function toggleCompare(id){
     var i=compare.indexOf(id);
-    if(i===-1){ if(compare.length>=5) return; compare.push(id); }
-    else compare.splice(i,1);
+    if(i===-1){
+      if(compare.length>=5) return;
+      compare.push(id);
+      var rec = DATA.find(r => r.__id === id);
+      posthog?.capture('tool_compared', { tool: rec?.__display_name || id });
+    } else {
+      compare.splice(i,1);
+    }
     updateCompareCount();
     saveState(); // Save state when compare selection changes
   }
@@ -17018,6 +17040,7 @@
     HAS_SEARCHED = true;
     document.getElementById('aiLanding').style.display="none";
     document.body.classList.remove('has-landing');
+    posthog?.capture('search', { query: q, result_count: matched.length, method: 'keyword' });
     renderList(matched);
     history.pushState({ view: 'search', query: q }, '');
     aiStatus.textContent = '';
@@ -17063,6 +17086,7 @@
       HAS_SEARCHED = true;
       document.getElementById('aiLanding').style.display="none";
       document.body.classList.remove('has-landing');
+      posthog?.capture('search', { query: q, method: 'ai' });
       applyFilters();
       history.pushState({ view: 'search', query: q }, '');
     }catch(err){
@@ -18063,6 +18087,7 @@ void main(){
 
     function updateUIForAuthenticatedUser() {
       const user = window.AUTH_STATE.user;
+      posthog?.identify(user.id, { email: user.email, role: user.role });
 
       // Hide topbar Sign In button, swap it for user email button
       const headerSignInBtn = document.getElementById('headerSignInBtn');
@@ -18224,6 +18249,7 @@ void main(){
             authenticated: true,
             accessToken: result.access_token
           };
+          posthog?.capture('sign_in');
           closeLoginModal();
           updateUIForAuthenticatedUser();
 
@@ -18311,6 +18337,7 @@ void main(){
         const result = await response.json();
 
         if (response.ok) {
+          posthog?.capture('sign_up', { email: document.getElementById('signUpEmail').value });
           successDiv.textContent = result.message || 'Check your email to verify your account.';
           successDiv.style.display = 'block';
           document.getElementById('signUpForm').reset();
