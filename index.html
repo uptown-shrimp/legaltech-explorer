@@ -16151,7 +16151,8 @@
         }
         var id = card.dataset.id;
         var rec = DATA.find(function(r){return r.__id===id;});
-        if(rec){
+        if(!rec) return;
+        window.requireAuth(function(){
           SELECTED_ID = id;
           renderDetails(rec);
           openRight('details');
@@ -16161,16 +16162,18 @@
             document.getElementById('expandRight').textContent='Collapse';
           }
           updateDimming();
-        }
+        });
       });
     });
     Array.prototype.forEach.call(container.querySelectorAll('.btn-compare'), function(btn){
       btn.addEventListener('click', function(e){
-        e.stopPropagation(); // Prevent card click
+        e.stopPropagation();
         var id=e.target.closest('.tool').dataset.id;
-        toggleCompare(id);
-        applyFilters();
-        updateDimming();
+        window.requireAuth(function(){
+          toggleCompare(id);
+          applyFilters();
+          updateDimming();
+        });
       });
     });
 
@@ -16421,7 +16424,7 @@
     var modalOverlay = document.querySelector('.edit-selection-overlay');
 
     if(editBtn) editBtn.addEventListener('click', openEditSelectionModal);
-    if(generateBtn) generateBtn.addEventListener('click', generateShortlistReport);
+    if(generateBtn) generateBtn.addEventListener('click', function(){ window.requireAuth(generateShortlistReport); });
     if(header) header.addEventListener('click', toggleShortlistPanel);
     if(cancelBtn) cancelBtn.addEventListener('click', closeEditSelectionModal);
     if(applyBtn) applyBtn.addEventListener('click', applyEditSelection);
@@ -16991,7 +16994,7 @@
   document.getElementById('closeRight').onclick=closeRight;
 
   // Compare overlay controls
-  document.getElementById('compareHeaderBtn').addEventListener('click', openCompareOverlay);
+  document.getElementById('compareHeaderBtn').addEventListener('click', function(){ window.requireAuth(openCompareOverlay); });
   document.getElementById('closeCompare').addEventListener('click', closeCompareOverlay);
   document.getElementById('tabCompareTable').addEventListener('click', ()=>switchCompareTab('table'));
   document.getElementById('tabCompareAI').addEventListener('click', ()=>switchCompareTab('ai'));
@@ -17925,6 +17928,19 @@ void main(){
       accessToken: null
     };
 
+    // Pending action to run after login completes
+    window.AUTH_PENDING_ACTION = null;
+
+    // Gate any action behind auth — if signed in, run immediately; otherwise prompt login
+    window.requireAuth = function(action) {
+      if (window.AUTH_STATE && window.AUTH_STATE.authenticated) {
+        action();
+      } else {
+        window.AUTH_PENDING_ACTION = action;
+        openLoginModal();
+      }
+    };
+
     // Store access token in memory for API calls
     function setAccessToken(token) {
       window.AUTH_STATE.accessToken = token;
@@ -18148,8 +18164,12 @@ void main(){
           closeLoginModal();
           updateUIForAuthenticatedUser();
 
-          // Refresh the page to load user-specific data
-          window.location.reload();
+          // Run any pending action that triggered the login prompt
+          if (window.AUTH_PENDING_ACTION) {
+            var fn = window.AUTH_PENDING_ACTION;
+            window.AUTH_PENDING_ACTION = null;
+            fn();
+          }
         } else {
           errorDiv.textContent = result.detail || 'Login failed';
           errorDiv.style.display = 'block';
@@ -18417,26 +18437,22 @@ void main(){
       }
     }
 
-    // Modal close button handlers - only allow closing if authenticated
+    // Modal close button handlers — always dismissable (modal re-appears on next action attempt)
     document.getElementById('loginModalClose').addEventListener('click', () => {
-      if (window.AUTH_STATE.authenticated) {
-        closeLoginModal();
-      }
+      window.AUTH_PENDING_ACTION = null;
+      closeLoginModal();
     });
     document.querySelector('#loginModal .auth-modal-overlay').addEventListener('click', () => {
-      if (window.AUTH_STATE.authenticated) {
-        closeLoginModal();
-      }
+      window.AUTH_PENDING_ACTION = null;
+      closeLoginModal();
     });
     document.getElementById('registerModalClose').addEventListener('click', () => {
-      if (window.AUTH_STATE.authenticated) {
-        closeRegisterModal();
-      }
+      window.AUTH_PENDING_ACTION = null;
+      closeRegisterModal();
     });
     document.querySelector('#registerModal .auth-modal-overlay').addEventListener('click', () => {
-      if (window.AUTH_STATE.authenticated) {
-        closeRegisterModal();
-      }
+      window.AUTH_PENDING_ACTION = null;
+      closeRegisterModal();
     });
 
     // Check for Supabase auth tokens in URL (from invite/reset emails)
@@ -18492,13 +18508,8 @@ void main(){
         return;
       }
 
-      // Normal flow - check auth status
+      // Silently check auth status — no forced gate; modal appears only on action
       await checkAuthStatus();
-
-      // If not authenticated, show login modal immediately
-      if (!window.AUTH_STATE.authenticated) {
-        openLoginModal();
-      }
     });
 
     // ===== Ghost State Prevention =====
