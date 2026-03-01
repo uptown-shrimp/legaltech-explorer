@@ -1371,6 +1371,18 @@
 
   <!-- === App logic === -->
   <script>
+  // Auth gate helper — defined here so it's available before any card clicks.
+  // openLoginModal is exposed on window by the auth script below.
+  window.AUTH_PENDING_ACTION = null;
+  window.requireAuth = function(action) {
+    if (window.AUTH_STATE && window.AUTH_STATE.authenticated) {
+      action();
+    } else {
+      window.AUTH_PENDING_ACTION = action;
+      if (typeof window.openLoginModal === 'function') window.openLoginModal();
+    }
+  };
+
   /* ===== Utilities: panel show/hide animations ===== */
   function showWithAnim(el){
     if(!el) return;
@@ -17928,18 +17940,7 @@ void main(){
       accessToken: null
     };
 
-    // Pending action to run after login completes
-    window.AUTH_PENDING_ACTION = null;
-
-    // Gate any action behind auth — if signed in, run immediately; otherwise prompt login
-    window.requireAuth = function(action) {
-      if (window.AUTH_STATE && window.AUTH_STATE.authenticated) {
-        action();
-      } else {
-        window.AUTH_PENDING_ACTION = action;
-        openLoginModal();
-      }
-    };
+    // requireAuth and AUTH_PENDING_ACTION are defined in the main script above
 
     // Store access token in memory for API calls
     function setAccessToken(token) {
@@ -18072,11 +18073,12 @@ void main(){
       }
     }
 
-    // Login modal functions
+    // Login modal functions — exposed on window so requireAuth (in main script) can call it
     function openLoginModal() {
       document.getElementById('loginModal').classList.add('active');
       document.getElementById('loginEmail').focus();
     }
+    window.openLoginModal = openLoginModal;
 
     function closeLoginModal() {
       document.getElementById('loginModal').classList.remove('active');
