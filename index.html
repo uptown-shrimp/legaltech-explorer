@@ -16224,37 +16224,20 @@
     // Store sorted results for reference
     SHORTLIST_RESULTS = sortedRows;
 
-    // Always aim for 3 shortlist items. If search results are sparse, supplement
-    // with top-popularity tools from the full DATA pool.
-    var defaultCount = 3;
-
-    // Build a popularity-sorted fallback pool from ALL data for supplementing
-    function getTopDataIds(excludeIds, needed){
-      var pool = DATA.slice().sort(function(a,b){
-        return (parseFloat(b['popularity_score'])||0) - (parseFloat(a['popularity_score'])||0);
-      });
-      var extra = [];
-      for(var pi = 0; pi < pool.length && extra.length < needed; pi++){
-        var pid = pool[pi].__id;
-        if(excludeIds.indexOf(pid) === -1) extra.push(pid);
-      }
-      return extra;
-    }
-
+    // Use compare array as the selection (they are now unified)
+    // If compare is empty, default to top 3 results
+    var defaultCount = Math.min(3, sortedRows.length);
     if(compare.length === 0){
-      // Default selection: top results from search, then supplement from DATA if needed
+      // Default selection: top 3 unique IDs
       var uniqueIds = [];
       for(var i = 0; i < sortedRows.length && uniqueIds.length < defaultCount; i++){
         var id = sortedRows[i].__id;
-        if(uniqueIds.indexOf(id) === -1) uniqueIds.push(id);
-      }
-      // Supplement from full DATA if fewer than 3 search results
-      if(uniqueIds.length < defaultCount){
-        var extras = getTopDataIds(uniqueIds, defaultCount - uniqueIds.length);
-        uniqueIds = uniqueIds.concat(extras);
+        if(uniqueIds.indexOf(id) === -1){
+          uniqueIds.push(id);
+        }
       }
       SHORTLIST_SELECTION = uniqueIds;
-      compare = uniqueIds.slice();
+      compare = uniqueIds.slice(); // Sync compare with shortlist
       updateCompareCount();
     } else {
       // Use compare array, but filter to only include items in current results
@@ -16262,29 +16245,25 @@
         return sortedRows.some(function(r){ return r.__id === id; });
       });
       if(validIds.length === 0){
-        // No carry-over — pick fresh top 3 from search results + supplement
+        // If no valid selections, default to top 3
         var uniqueIds = [];
         for(var i = 0; i < sortedRows.length && uniqueIds.length < defaultCount; i++){
           var id = sortedRows[i].__id;
-          if(uniqueIds.indexOf(id) === -1) uniqueIds.push(id);
-        }
-        if(uniqueIds.length < defaultCount){
-          var extras = getTopDataIds(uniqueIds, defaultCount - uniqueIds.length);
-          uniqueIds = uniqueIds.concat(extras);
+          if(uniqueIds.indexOf(id) === -1){
+            uniqueIds.push(id);
+          }
         }
         SHORTLIST_SELECTION = uniqueIds;
         compare = uniqueIds.slice();
         updateCompareCount();
       } else {
-        // Supplement carry-over items with top search results, then top DATA
+        // Supplement with top results if under defaultCount
         if(validIds.length < defaultCount){
           for(var i = 0; i < sortedRows.length && validIds.length < defaultCount; i++){
             var supId = sortedRows[i].__id;
-            if(validIds.indexOf(supId) === -1) validIds.push(supId);
-          }
-          if(validIds.length < defaultCount){
-            var extras = getTopDataIds(validIds, defaultCount - validIds.length);
-            validIds = validIds.concat(extras);
+            if(validIds.indexOf(supId) === -1){
+              validIds.push(supId);
+            }
           }
           compare = validIds.slice();
           updateCompareCount();
@@ -16292,14 +16271,6 @@
         SHORTLIST_SELECTION = validIds;
       }
     }
-
-    // Ensure any supplemented records (from DATA, not in search results) are in SHORTLIST_RESULTS
-    SHORTLIST_SELECTION.forEach(function(id){
-      if(!SHORTLIST_RESULTS.some(function(r){ return r.__id === id; })){
-        var rec = DATA.find(function(r){ return r.__id === id; });
-        if(rec) SHORTLIST_RESULTS.push(rec);
-      }
-    });
 
     // Show the panel
     wrapper.classList.remove('no-panel');
@@ -16320,7 +16291,8 @@
     }
 
     SHORTLIST_SELECTION.forEach(function(id, index){
-      var rec = SHORTLIST_RESULTS.find(r => r.__id === id);
+      var rec = SHORTLIST_RESULTS.find(function(r){ return r.__id === id; }) ||
+                DATA.find(function(r){ return r.__id === id; });
       if(!rec) return;
 
       var rank = SHORTLIST_RESULTS.findIndex(r => r.__id === id) + 1;
