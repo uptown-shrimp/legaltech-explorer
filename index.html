@@ -1251,6 +1251,7 @@
       <button class="btn" id="compareHeaderBtn" style="display:none">
         Compare <span id="compareHeaderCount">(0)</span>
       </button>
+      <button class="btn" id="headerSignInBtn" style="display:none">Sign In</button>
       <button class="btn" id="landingMenuBtn" style="margin-left:8px">Menu</button>
     </div>
   </header>
@@ -17808,6 +17809,9 @@ void main(){
         <div class="auth-link" style="margin-top: 20px;">
           <a href="#" id="forgotPasswordLink">Forgot your password?</a>
         </div>
+        <div class="auth-link" style="margin-top: 8px;">
+          <a href="#" id="signUpLink">Don't have an account? Sign up</a>
+        </div>
       </form>
 
       <!-- Forgot Password Form (hidden by default) -->
@@ -17824,6 +17828,50 @@ void main(){
 
         <div class="auth-link" style="margin-top: 20px;">
           <a href="#" id="backToLoginLink">Back to Sign In</a>
+        </div>
+      </form>
+
+      <!-- Sign Up Form (hidden by default) -->
+      <form id="signUpForm" style="display: none;">
+        <div class="auth-form-group">
+          <label for="signUpEmail">Email</label>
+          <input type="email" id="signUpEmail" name="email" required autocomplete="email">
+        </div>
+
+        <div class="auth-form-group">
+          <label for="signUpPassword">Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="signUpPassword" name="password" required autocomplete="new-password" minlength="8">
+            <button type="button" class="password-toggle" onclick="togglePassword('signUpPassword', this)">
+              <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+          <small style="color:#6b7280;font-size:12px;margin-top:4px;display:block">Minimum 8 characters</small>
+        </div>
+
+        <div class="auth-form-group">
+          <label for="signUpPasswordConfirm">Confirm Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="signUpPasswordConfirm" name="passwordConfirm" required autocomplete="new-password" minlength="8">
+            <button type="button" class="password-toggle" onclick="togglePassword('signUpPasswordConfirm', this)">
+              <svg class="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="auth-submit-btn" id="signUpSubmitBtn">Create Account</button>
+
+        <div id="signUpError" class="auth-error" style="display: none;"></div>
+        <div id="signUpSuccess" class="auth-success" style="display: none;"></div>
+
+        <div class="auth-link" style="margin-top: 20px;">
+          <a href="#" id="backToSignInLink">Already have an account? Sign in</a>
         </div>
       </form>
     </div>
@@ -18060,17 +18108,20 @@ void main(){
     function updateUIForAuthenticatedUser() {
       const user = window.AUTH_STATE.user;
 
-      // Add user menu button to header if it doesn't exist
-      const header = document.querySelector('header .wrap');
-      let userMenuBtn = document.getElementById('userMenuBtn');
+      // Hide topbar Sign In button, swap it for user email button
+      const headerSignInBtn = document.getElementById('headerSignInBtn');
+      if (headerSignInBtn) headerSignInBtn.style.display = 'none';
 
-      if (!userMenuBtn && header) {
+      // Add/update user menu button next to Sign In slot
+      let userMenuBtn = document.getElementById('userMenuBtn');
+      if (!userMenuBtn) {
         userMenuBtn = document.createElement('button');
         userMenuBtn.id = 'userMenuBtn';
-        userMenuBtn.className = 'user-menu-btn';
-        header.appendChild(userMenuBtn);
+        userMenuBtn.className = 'btn user-menu-btn';
+        // Insert before Menu button
+        const menuBtn = document.getElementById('landingMenuBtn');
+        if (menuBtn) menuBtn.parentNode.insertBefore(userMenuBtn, menuBtn);
       }
-
       if (userMenuBtn) {
         userMenuBtn.textContent = user.email;
         userMenuBtn.onclick = showUserMenu;
@@ -18078,33 +18129,27 @@ void main(){
 
       // Hide "Sign In" menu item, show "Sign Out"
       const signInMenuItem = document.getElementById('signInMenuItem');
-      if (signInMenuItem) {
-        signInMenuItem.style.display = 'none';
-      }
+      if (signInMenuItem) signInMenuItem.style.display = 'none';
 
       const signOutMenuItem = document.getElementById('signOutMenuItem');
-      if (signOutMenuItem) {
-        signOutMenuItem.style.display = '';
-      }
+      if (signOutMenuItem) signOutMenuItem.style.display = '';
     }
 
     function updateUIForAnonymousUser() {
       // Remove user menu button if it exists
       const userMenuBtn = document.getElementById('userMenuBtn');
-      if (userMenuBtn) {
-        userMenuBtn.remove();
-      }
+      if (userMenuBtn) userMenuBtn.remove();
+
+      // Show topbar Sign In button
+      const headerSignInBtn = document.getElementById('headerSignInBtn');
+      if (headerSignInBtn) headerSignInBtn.style.display = '';
 
       // Show "Sign In" menu item, hide "Sign Out"
       const signInMenuItem = document.getElementById('signInMenuItem');
-      if (signInMenuItem) {
-        signInMenuItem.style.display = '';
-      }
+      if (signInMenuItem) signInMenuItem.style.display = '';
 
       const signOutMenuItem = document.getElementById('signOutMenuItem');
-      if (signOutMenuItem) {
-        signOutMenuItem.style.display = 'none';
-      }
+      if (signOutMenuItem) signOutMenuItem.style.display = 'none';
     }
 
     function showUserMenu() {
@@ -18125,6 +18170,25 @@ void main(){
       document.getElementById('loginModal').classList.remove('active');
       document.getElementById('loginForm').reset();
       document.getElementById('loginError').style.display = 'none';
+      // Reset to sign-in view in case user had switched to sign-up
+      showLoginView();
+    }
+
+    function showSignUpView() {
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('forgotPasswordForm').style.display = 'none';
+      document.getElementById('signUpForm').style.display = 'block';
+      document.querySelector('#loginModal h2').textContent = 'Create Account';
+      document.querySelector('#loginModal .subtitle').textContent = 'Join Legal-Tech Explorer';
+      document.getElementById('signUpEmail').focus();
+    }
+
+    function showLoginView() {
+      document.getElementById('signUpForm').style.display = 'none';
+      document.getElementById('forgotPasswordForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+      document.querySelector('#loginModal h2').textContent = 'Sign In';
+      document.querySelector('#loginModal .subtitle').textContent = 'Access the Legal-Tech Explorer';
     }
 
     // Register modal functions
@@ -18238,13 +18302,77 @@ void main(){
     // Back to login link handler
     document.getElementById('backToLoginLink').addEventListener('click', (e) => {
       e.preventDefault();
-      document.getElementById('forgotPasswordForm').style.display = 'none';
-      document.getElementById('loginForm').style.display = 'block';
-      document.querySelector('#loginModal h2').textContent = 'Sign In';
-      document.querySelector('#loginModal .subtitle').textContent = 'Access the Legal-Tech Explorer';
       document.getElementById('forgotError').style.display = 'none';
       document.getElementById('forgotSuccess').style.display = 'none';
+      showLoginView();
     });
+
+    // Sign Up link handler (inside login modal)
+    document.getElementById('signUpLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      showSignUpView();
+    });
+
+    // Back to Sign In link handler (inside sign-up form)
+    document.getElementById('backToSignInLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      document.getElementById('signUpError').style.display = 'none';
+      document.getElementById('signUpSuccess').style.display = 'none';
+      showLoginView();
+    });
+
+    // Sign Up form submission
+    document.getElementById('signUpForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('signUpSubmitBtn');
+      const errorDiv = document.getElementById('signUpError');
+      const successDiv = document.getElementById('signUpSuccess');
+      const password = document.getElementById('signUpPassword').value;
+      const passwordConfirm = document.getElementById('signUpPasswordConfirm').value;
+
+      if (password !== passwordConfirm) {
+        errorDiv.textContent = 'Passwords do not match';
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+
+      try {
+        const response = await fetch('/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('signUpEmail').value,
+            password
+          })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          successDiv.textContent = result.message || 'Check your email to verify your account.';
+          successDiv.style.display = 'block';
+          document.getElementById('signUpForm').reset();
+        } else {
+          errorDiv.textContent = result.detail || 'Sign up failed. Please try again.';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Network error. Please try again.';
+        errorDiv.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Account';
+      }
+    });
+
+    // Topbar Sign In button
+    document.getElementById('headerSignInBtn')?.addEventListener('click', openLoginModal);
 
     // Forgot password form submission
     document.getElementById('forgotPasswordForm').addEventListener('submit', async (e) => {

@@ -15,7 +15,7 @@ from openai import OpenAI
 
 # Import Supabase authentication
 from supabase_auth import (
-    sign_in, sign_out, get_user_from_token, refresh_session,
+    sign_in, sign_out, sign_up, get_user_from_token, refresh_session,
     request_password_reset, update_password, admin_create_user, admin_invite_user,
     admin_list_users, is_configured as supabase_configured
 )
@@ -195,6 +195,10 @@ class LoginRequest(BaseModel):
 
 class RegisterRequest(BaseModel):
     token: str
+    password: str
+
+class SignUpRequest(BaseModel):
+    email: str
     password: str
 
 class InviteRequest(BaseModel):
@@ -546,6 +550,25 @@ async def forgot_password(req: LoginRequest):
 
     # Always return success to prevent email enumeration
     return {"success": True, "message": "If an account exists, a reset email has been sent"}
+
+@app.post("/auth/signup")
+async def signup(req: SignUpRequest):
+    """Public sign-up — Supabase sends a verification email automatically"""
+    if len(req.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+
+    result = sign_up(req.email, req.password)
+
+    if "error" in result:
+        error = result["error"]
+        if "already registered" in error.lower() or "already exists" in error.lower():
+            raise HTTPException(status_code=409, detail="An account with this email already exists")
+        raise HTTPException(status_code=400, detail=error)
+
+    return {
+        "success": True,
+        "message": "Account created. Please check your email to verify your account before signing in."
+    }
 
 class UpdatePasswordRequest(BaseModel):
     password: str
