@@ -17073,6 +17073,7 @@
     aiStatus.textContent="Thinking…";
     LAST_QUERY = q; // Store the search query
     SHORTLIST_SELECTION = []; // Reset shortlist for new search
+    compare = []; // Reset compare so new search always picks fresh top 3
     LAST_GENERATED_KEY = ''; // Allow report to be generated for new results
 
     // If user is not authenticated, use client-side keyword search
