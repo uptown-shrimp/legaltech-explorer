@@ -1251,7 +1251,7 @@
       <button class="btn" id="compareHeaderBtn" style="display:none">
         Compare <span id="compareHeaderCount">(0)</span>
       </button>
-      <button class="btn" id="headerSignInBtn" style="display:none">Sign In</button>
+      <button id="headerSignInBtn" style="display:none;background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#2EA7A7;padding:4px 8px;">Sign In</button>
       <button class="btn" id="landingMenuBtn" style="margin-left:8px">Menu</button>
     </div>
   </header>
@@ -16333,11 +16333,9 @@
         itemEl.classList.add('selected');
       }
     } else {
-      // Remove from selection (but keep at least 1)
-      if(TEMP_SELECTION.length > 1){
-        TEMP_SELECTION.splice(index, 1);
-        itemEl.classList.remove('selected');
-      }
+      // Remove from selection
+      TEMP_SELECTION.splice(index, 1);
+      itemEl.classList.remove('selected');
     }
 
     updateEditSelectionCount();
@@ -17279,6 +17277,7 @@
 
   // Init
   document.body.classList.add('has-landing'); // Add landing class on load
+  DATA = normalizeRows(DATA); // Ensure inline DATA has __id fields before CSV loads
   buildFilters();
   initShortlistPanel();
   applyFilters();
